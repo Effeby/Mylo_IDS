@@ -1,0 +1,81 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🔵 FastAPI :8000",
+      "type": "shell",
+      "command": "python",
+      "args": ["-m", "uvicorn", "api.main:app", "--reload", "--port", "8000", "--host", "0.0.0.0"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "mylo",
+        "showReuseMessage": false
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "🟢 Django :8001",
+      "type": "shell",
+      "command": "python",
+      "args": ["manage.py", "runserver", "8001"],
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "mylo",
+        "showReuseMessage": false
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "🟣 React :5173",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "mylo",
+        "showReuseMessage": false
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "🟡 Capture Scapy",
+      "type": "shell",
+      "command": "python",
+      "args": ["ml/capture.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "mylo",
+        "showReuseMessage": false
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "🚀 MYLO IDS — Lancer tout",
+      "dependsOn": [
+        "🔵 FastAPI :8000",
+        "🟢 Django :8001",
+        "🟣 React :5173",
+        "🟡 Capture Scapy"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    }
+  ]
+}
