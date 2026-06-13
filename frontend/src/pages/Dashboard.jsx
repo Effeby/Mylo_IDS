@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Activity, AlertTriangle, CheckCircle,
          Brain, Zap, Eye, Ban, RefreshCw, ArrowRight } from 'lucide-react'
-import { getAlertStats, getRiverStatus } from '../api/mylo'
+import { getAlertStats, getRiverStatus, getOrganisationName } from '../api/mylo'
 import AlertBadge from '../components/AlertBadge'
 
 const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
@@ -87,9 +87,9 @@ export default function Dashboard() {
             <Shield size={22} color="#fff" />
           </div>
           <div>
-            <h1 style={{ margin:0, fontSize:22, fontWeight:800 }}>SecureBank — Overview</h1>
+            <h1 style={{ margin:0, fontSize:22, fontWeight:800 }}>{getOrganisationName()} — Overview</h1>
             <p style={{ margin:0, color:'#475569', fontSize:12 }}>
-              Mylo IDS · Rafraîchissement auto toutes les 15s
+              Mylo IPS · Rafraîchissement auto toutes les 15s
             </p>
           </div>
         </div>
@@ -144,12 +144,12 @@ export default function Dashboard() {
       {/* ── Statut système ── */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, marginBottom:20 }}>
 
-        {/* Mylo IDS */}
+        {/* Mylo IPS */}
         <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
             <Shield size={16} color="#3B82F6" />
             <span style={{ fontSize:12, fontWeight:700, color:'#94A3B8', letterSpacing:'0.05em' }}>
-              MYLO IDS
+              Mylo IPS
             </span>
             <span style={{
               marginLeft:'auto', fontSize:10, fontWeight:700,

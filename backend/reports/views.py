@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
 from alerts.models import Alert
+from accounts.permissions import CanGenerateReports, IsOrgAdmin
 
 
 class ExportCSVView(APIView):
@@ -133,6 +134,7 @@ class GeneratePDFView(APIView):
 
         from_date = request.query_params.get('from')
         to_date   = request.query_params.get('to')
+        org_name = request.user.organisation.name if getattr(request.user, 'organisation', None) else 'votre organisation'
 
         # ── Collecter les données ─────────────────────────────────────
         qs_all = Alert.objects.all()
@@ -198,7 +200,7 @@ class GeneratePDFView(APIView):
 
         # ── En-tête ───────────────────────────────────────────────────
         header_data = [[
-            Paragraph('MYLO IDS', S_TITLE),
+            Paragraph('Mylo IPS', S_TITLE),
         ]]
         header_table = Table(header_data, colWidths=[17*cm])
         header_table.setStyle(TableStyle([
@@ -209,7 +211,7 @@ class GeneratePDFView(APIView):
         ]))
         elements.append(header_table)
         elements.append(Spacer(1, 0.3*cm))
-        elements.append(Paragraph('Rapport de Sécurité — SecureBank', S_SUBTITLE))
+        elements.append(Paragraph(f'Rapport de Sécurité — {org_name}', S_SUBTITLE))
         elements.append(Paragraph(f'Généré le {now_str}  |  Période : {per_from} → {per_to}', S_SUBTITLE))
         elements.append(Spacer(1, 0.5*cm))
         elements.append(HRFlowable(width="100%", thickness=1, color=BLUE_ACC))
@@ -348,7 +350,7 @@ class GeneratePDFView(APIView):
         elements.append(HRFlowable(width="100%", thickness=1, color=BLUE_ACC))
         elements.append(Spacer(1, 0.2*cm))
         elements.append(Paragraph(
-            f'Mylo IDS — SecureBank Security Center — Généré le {now_str}',
+            f'Mylo IPS — {org_name} Security Center — Généré le {now_str}',
             style('footer', fontSize=8, textColor=GRAY, alignment=TA_CENTER)
         ))
 
@@ -361,61 +363,6 @@ class GeneratePDFView(APIView):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
-
-class GenerateReportView(APIView):
-    """Génère un rapport JSON — utilisé par le Copilot et le frontend."""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        from_date = request.query_params.get('from')
-        to_date   = request.query_params.get('to')
-
-        qs_all = Alert.objects.all()
-        qs     = Alert.objects.filter(is_attack=True)
-        if from_date:
-            qs_all = qs_all.filter(detected_at__date__gte=from_date)
-            qs     = qs.filter(detected_at__date__gte=from_date)
-        if to_date:
-            qs_all = qs_all.filter(detected_at__date__lte=to_date)
-            qs     = qs.filter(detected_at__date__lte=to_date)
-
-        total_all   = qs_all.count()
-        total       = qs.count()
-        by_type     = dict(qs.values_list('attack_type').annotate(c=Count('id')).values_list('attack_type', 'c'))
-        by_severity = dict(qs.values_list('severity').annotate(c=Count('id')).values_list('severity', 'c'))
-        top_ips     = list(qs.values('src_ip').annotate(count=Count('id')).order_by('-count')[:10])
-        blocked_ips = []
-        try:
-            from alerts.models import BlacklistedIP
-            blocked_ips = list(BlacklistedIP.objects.filter(is_active=True).values(
-                'ip_address', 'reason', 'blocked_by', 'created_at'
-            )[:20])
-            for b in blocked_ips:
-                b['created_at'] = b['created_at'].isoformat()
-        except Exception:
-            pass
-        recent = list(qs.order_by('-detected_at')[:10].values(
-            'id', 'attack_type', 'severity', 'src_ip', 'dst_ip', 'detected_at', 'status'
-        ))
-        for r in recent:
-            r['detected_at'] = r['detected_at'].isoformat()
-
-        return Response({
-            'generated_at': datetime.now().isoformat(),
-            'period':       {'from': from_date or 'Toute la période', 'to': to_date or 'Maintenant'},
-            'summary': {
-                'total_analysed': total_all,
-                'total_attacks':  total,
-                'total_normal':   total_all - total,
-                'attack_rate':    round(total / total_all * 100, 2) if total_all > 0 else 0,
-                'by_type':        by_type,
-                'by_severity':    by_severity,
-                'top_ips':        top_ips,
-                'blocked_ips':    blocked_ips,
-            },
-            'recent_alerts':   recent,
-            'recommendations': _recommendations(by_type, by_severity),
-        })
 
 
 def _recommendations(by_type, by_severity):
@@ -441,3 +388,84 @@ def _recommendations(by_type, by_severity):
     if not recs:
         recs.append("Situation normale — Continuer la surveillance")
     return recs
+
+
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+
+# IsAdminOrSuperAdmin → à remplacer par ta vraie classe après vérification
+from rest_framework.permissions import IsAuthenticated as IsAdminOrSuperAdmin
+from .models import ReportConfig
+from .serializers import ReportConfigSerializer
+from .tasks import send_daily_reports
+from .utils.pdf_generator import generate_daily_report_pdf
+
+
+@api_view(["GET", "POST", "PUT"])
+@permission_classes([IsOrgAdmin])
+def report_config(request):
+    """GET/POST/PUT la configuration du rapport pour l'org courante."""
+    org = request.user.organisation
+    config, _ = ReportConfig.objects.get_or_create(
+        organisation=org,
+        defaults={"report_email": request.user.email, "send_hour": 7}
+    )
+
+    if request.method == "GET":
+        return Response(ReportConfigSerializer(config).data)
+
+    serializer = ReportConfigSerializer(config, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        # Replanifier la tâche Beat avec la nouvelle heure
+        _update_beat_schedule(config)
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsOrgAdmin])
+def trigger_report_now(request):
+    """Déclenche immédiatement la génération et l'envoi du rapport."""
+    send_daily_reports.delay()
+    return Response({"message": "Rapport en cours de génération et d'envoi."})
+
+
+@api_view(["GET"])
+@permission_classes([CanGenerateReports])
+def preview_report(request):
+    """Retourne le PDF en réponse HTTP pour prévisualisation."""
+    from django.http import HttpResponse
+    org = request.user.organisation
+    pdf_bytes = generate_daily_report_pdf(org)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="preview_rapport.pdf"'
+    return response
+
+
+def _update_beat_schedule(config):
+    """Met à jour dynamiquement le schedule Celery Beat en DB."""
+    try:
+        from django_celery_beat.models import PeriodicTask, CrontabSchedule
+        import json
+
+        schedule, _ = CrontabSchedule.objects.get_or_create(
+            hour=config.send_hour,
+            minute=config.send_minute,
+            day_of_week="*",
+            day_of_month="*",
+            month_of_year="*",
+        )
+        task, _ = PeriodicTask.objects.get_or_create(
+            name=f"mylo-daily-report-{config.organisation.id}",
+            defaults={"task": "reports.send_daily_reports"}
+        )
+        task.crontab = schedule
+        task.enabled = config.is_active
+        task.kwargs = json.dumps({"org_id": str(config.organisation.id)})
+        task.save()
+    except Exception:
+        pass  # Beat DB non disponible (ex. en dev)

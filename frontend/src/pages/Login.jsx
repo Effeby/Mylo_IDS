@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Shield, Eye, EyeOff } from 'lucide-react'
 import { login } from '../api/mylo'
 
 
 export default function Login() {
-  const [show, setShow]   = useState(false)
-  const [form, setForm]   = useState({ user: '', pass: '' })
-  const [error, setError] = useState('')
+  const [show, setShow]       = useState(false)
+  const [form, setForm]       = useState({ user: '', pass: '' })
+  const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -16,9 +16,39 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await login(form.user, form.pass)
-      //navigate('/monitor')
-      navigate('/dashboard')  // au lieu de navigate('/monitor')
+      const data = await login(form.user, form.pass)
+
+      if (data.user?.password_must_change) {
+        sessionStorage.setItem('mylo_temp_auth', JSON.stringify({
+          access: data.access,
+          refresh: data.refresh,
+          user:   data.user,
+        }))
+        navigate('/password-change')
+        return
+      }
+
+      if (data.user?.totp_enabled) {
+        sessionStorage.setItem('mylo_temp_auth', JSON.stringify({
+          access: data.access,
+          refresh: data.refresh,
+          user:   data.user,
+        }))
+        navigate('/totp-verify')
+        return
+      }
+
+      localStorage.setItem('mylo_access',  data.access)
+      localStorage.setItem('mylo_refresh', data.refresh)
+      localStorage.setItem('mylo_user',    JSON.stringify(data.user))
+
+      if (data.user?.organisation?.is_setup_done === false) {
+        navigate('/onboarding')
+      } else if (!data.user?.totp_enabled) {
+        navigate('/totp-setup')
+      } else {
+        navigate('/dashboard')
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Identifiants incorrects')
     } finally {
@@ -51,8 +81,10 @@ export default function Login() {
           }}>
             <Shield size={32} color="#fff" />
           </div>
-          <h1 style={{ color: '#F8FAFC', fontSize: 24, fontWeight: 800, margin: 0 }}>Mylo IDS</h1>
-          <p style={{ color: '#94A3B8', fontSize: 13, margin: '6px 0 0' }}>SecureBank Security Center</p>
+          <h1 style={{ color: '#F8FAFC', fontSize: 24, fontWeight: 800, margin: 0 }}>Mylo IPS</h1>
+          <p style={{ color: '#94A3B8', fontSize: 13, margin: '6px 0 0' }}>
+            Intelligent Security Center
+          </p>
         </div>
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -118,8 +150,16 @@ export default function Login() {
           </button>
         </form>
 
-        <p style={{ color: '#475569', fontSize: 11, textAlign: 'center', marginTop: 24 }}>
-          Système de détection d'intrusion — SecureBank © 2025
+        {/* Lien inscription */}
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#475569' }}>
+          Pas encore de compte ?{' '}
+          <Link to="/register" style={{ color: '#3B82F6', textDecoration: 'none', fontWeight: 600 }}>
+            Créer un espace Mylo IPS →
+          </Link>
+        </div>
+
+        <p style={{ color: '#334155', fontSize: 11, textAlign: 'center', marginTop: 16 }}>
+          Mylo IPS — Système de prévention d'intrusion © 2025
         </p>
       </div>
     </div>

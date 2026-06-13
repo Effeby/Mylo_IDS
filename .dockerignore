@@ -1,0 +1,9 @@
+ml/data_prepared/
+ml/cici_ds2017/
+ml/data/
+ml/outputs/
+ml/KDD*.txt
+venv/
+**/__pycache__/
+**/*.pyc
+.git/

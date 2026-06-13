@@ -14,9 +14,9 @@ print("  MYLO Backend — Setup initial")
 print("=" * 45)
 
 users = [
-    dict(username='admin',   password='mylo2025',    email='admin@securebank.ci',
-         role='admin',   first_name='Admin',    last_name='SecureBank', is_superuser=True, is_staff=True),
-    dict(username='analyst', password='analyst2025', email='analyst@securebank.ci',
+    dict(username='admin',   password='mylo2025',    email='admin@yourorganisation.ci',
+         role='admin',   first_name='Admin',    last_name='Organisation', is_superuser=True, is_staff=True),
+    dict(username='analyst', password='analyst2025', email='analyst@yourorganisation.ci',
          role='analyst', first_name='Analyste', last_name='SOC',        is_superuser=False, is_staff=False),
 ]
 

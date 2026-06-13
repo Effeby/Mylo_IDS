@@ -13,6 +13,12 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env à la racine du projet
+load_dotenv(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
+
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,6 +38,59 @@ ALLOWED_HOSTS = ['*']
 # URL interne Django (pour les appels internes)
 MYLO_DJANGO_URL = os.environ.get('MYLO_DJANGO_URL', 'http://localhost:8001')
 
+
+# ── Celery ──────────────────────────────────────────────
+CELERY_BROKER_URL    = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_TIMEZONE = "Africa/Abidjan"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# ─── Celery Beat Schedule ─────────────────────────────────────────────
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'poll-wazuh-every-10s': {
+        'task':     'alerts.poll_wazuh_alerts',
+        'schedule': 10.0,
+    },
+    'send-daily-reports': {
+        'task':     'reports.send_daily_reports',
+        'schedule': crontab(hour=7, minute=0),
+    },
+}
+
+# ─── Wazuh API ────────────────────────────────────────────────────────
+WAZUH_API_URL      = os.environ.get('WAZUH_API_URL', 'https://172.16.30.20')
+WAZUH_API_PORT     = os.environ.get('WAZUH_API_PORT', '55000')
+WAZUH_API_USER     = os.environ.get('WAZUH_API_USER', 'wazuh-wui')
+WAZUH_API_PASSWORD = os.environ.get('WAZUH_API_PASSWORD', '')
+WAZUH_VERIFY_SSL   = False
+
+# ─── OPNsense API ─────────────────────────────────────────────────────
+OPNSENSE_URL        = os.environ.get('OPNSENSE_URL', 'https://172.16.1.1')
+OPNSENSE_API_KEY    = os.environ.get('OPNSENSE_API_KEY', '')
+OPNSENSE_API_SECRET = os.environ.get('OPNSENSE_API_SECRET', '')
+
+
+# ── Email ────────────────────────────────────────────────
+# Option A — Brevo (SaaS public)
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp-relay.brevo.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("BREVO_SMTP_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("BREVO_SMTP_KEY", "")
+DEFAULT_FROM_EMAIL = "Mylo IPS <alerts@mylo-ids.site>"
+
+# Option B — SMTP interne GNS3 (décommenter pour le lab)
+# EMAIL_HOST = "192.168.10.5"   # IP hMailServer dans GNS3
+# EMAIL_PORT = 25
+# EMAIL_USE_TLS = False
+# EMAIL_HOST_USER = "mylo@votreorganisation.local"
+# EMAIL_HOST_PASSWORD = "password"
+# DEFAULT_FROM_EMAIL = "Mylo IPS <mylo@votreorganisation.local>"
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -50,6 +109,7 @@ INSTALLED_APPS = [
     'alerts',
     'actions',
     'reports',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -61,14 +121,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'accounts.middleware.TenantMiddleware',
+    'accounts.middleware.AuditMiddleware',
 ]
- 
+
 ROOT_URLCONF = 'core.urls'
  
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'reports' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -88,8 +151,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'mylo.db',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'mylo_db'),
+        'USER': os.environ.get('DB_USER', 'dydybinks'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'Kalinux@203'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -140,6 +207,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
  
+
 # ─── REST FRAMEWORK ───────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -158,7 +226,7 @@ SIMPLE_JWT = {
 }
  
 # ─── MYLO CONFIG ──────────────────────────────────────────────────────
-MYLO_FASTAPI_URL    = 'http://localhost:8000'
+MYLO_FASTAPI_URL    = os.environ.get('MYLO_FASTAPI_URL', 'http://api:8000')
 MYLO_AUTO_BLOCK     = False       # Blocage automatique des IP suspectes
 MYLO_BLOCK_THRESHOLD = 0.85       # Score au-dessus duquel on bloque auto
 MYLO_RIVER_ENABLED  = True        # Apprentissage en ligne activé

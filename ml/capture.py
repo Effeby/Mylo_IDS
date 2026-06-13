@@ -1,50 +1,84 @@
 """
-Mylo IDS — Capture trafic réel (WiFi / SecureBank)
+Mylo — Capture trafic réel (WiFi)
 Capture → Features → XGBoost prédit → River apprend → Django sauvegarde
+
+Les credentials sont lus depuis D:/MYLO/.env.capture
+Ce fichier est créé automatiquement par Mylo au premier login admin.
 """
 import time
 import requests
 import threading
+import os
 from collections import defaultdict
 from scapy.all import sniff, IP, TCP, UDP, ICMP
+from pathlib import Path
 
 # ─── CONFIG ───────────────────────────────────────────────────────────
-WIFI_IFACE   = r'\Device\NPF_{A6317CF1-5894-4D90-AA9D-9A6AAAE8FF74}'
-DJANGO_URL   = 'http://localhost:8001'
-FASTAPI_URL  = 'http://localhost:8000'
-WINDOW_SEC   = 2
+BASE_DIR   = Path(__file__).resolve().parent.parent
+ENV_FILE   = BASE_DIR / ".env.capture"
+
+DJANGO_URL = os.environ.get("MYLO_DJANGO_URL", "http://localhost:8001")
+_ifaces_raw    = os.environ.get("CAPTURE_IFACE", "enp0s3")
+CAPTURE_IFACES = [i.strip() for i in _ifaces_raw.split(",")]
+WINDOW_SEC = 2
 RIVER_AUTO_LEARN_THRESHOLD = 0.70
 
 AUTH_TOKEN = None
+AUTH_USER  = None
 
 PROTO_MAP = {'TCP': 2, 'UDP': 1, 'ICMP': 0, 'OTHER': 2}
-FLAG_MAP  = {
-    'S': 2, 'SA': 4, 'A': 10, 'FA': 6, 'R': 8, 'PA': 24,
-}
+FLAG_MAP  = {'S': 2, 'SA': 4, 'A': 10, 'FA': 6, 'R': 8, 'PA': 24}
 
 flows = defaultdict(lambda: {
     'src_bytes': 0, 'dst_bytes': 0, 'count': 0,
     'srv_count': 0, 'duration': 0, 'flags': [],
     'start_time': time.time(), 'protocol': 'OTHER',
     'src_ip': '', 'dst_ip': '',
-    'src_port': 0, 'dst_port': 0,   # ← nouveaux champs
+    'src_port': 0, 'dst_port': 0,
     'serror_count': 0, 'rerror_count': 0,
 })
-lock = threading.Lock()
-stats = {
-    'captured': 0, 'sent': 0, 'attacks': 0,
-    'river_learned': 0, 'river_skipped': 0,
-}
+lock  = threading.Lock()
+stats = {'captured': 0, 'sent': 0, 'attacks': 0, 'river_learned': 0, 'river_skipped': 0}
+
+
+def read_env_capture():
+    """Lit les credentials depuis .env.capture"""
+    env = {}
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if line and '=' in line and not line.startswith('#'):
+                k, v = line.split('=', 1)
+                env[k.strip()] = v.strip()
+    return env
 
 
 def get_token():
-    global AUTH_TOKEN
+    global AUTH_TOKEN, AUTH_USER
+    env = read_env_capture()
+
+    username = env.get('CAPTURE_USERNAME')
+    password = env.get('CAPTURE_PASSWORD')
+
+    if not username or not password:
+        print(f"  ⚠  Credentials manquants dans {ENV_FILE}")
+        print(f"  💡 Connecte-toi à Mylo — les credentials seront sauvegardés automatiquement.")
+        print(f"  💡 Ou crée manuellement {ENV_FILE} avec :")
+        print(f"     CAPTURE_USERNAME=ton_username")
+        print(f"     CAPTURE_PASSWORD=ton_password")
+        return
+
     try:
         r = requests.post(f'{DJANGO_URL}/api/auth/login/', json={
-            'username': 'admin', 'password': 'mylo2025'
+            'username': username, 'password': password
         }, timeout=5)
-        AUTH_TOKEN = r.json().get('access')
-        print("  ✓ Auth Django OK")
+        if r.ok:
+            AUTH_TOKEN = r.json().get('access')
+            AUTH_USER  = username
+            org = r.json().get('user', {}).get('organisation', {}).get('name', '?')
+            print(f"  ✓ Auth Django OK — {username} ({org})")
+        else:
+            print(f"  ✗ Auth échouée ({r.status_code}) — vérifie {ENV_FILE}")
     except Exception as e:
         print(f"  ✗ Auth Django échouée: {e}")
 
@@ -69,7 +103,6 @@ def packet_to_flow(pkt):
             flags = str(pkt[TCP].flags)
             flow['flags'].append(flags)
             flow['srv_count'] += 1
-            # Capturer les ports TCP
             if flow['src_port'] == 0:
                 flow['src_port'] = pkt[TCP].sport
                 flow['dst_port'] = pkt[TCP].dport
@@ -80,7 +113,6 @@ def packet_to_flow(pkt):
         elif pkt.haslayer(UDP):
             flow['protocol'] = 'UDP'
             flow['srv_count'] += 1
-            # Capturer les ports UDP
             if flow['src_port'] == 0:
                 flow['src_port'] = pkt[UDP].sport
                 flow['dst_port'] = pkt[UDP].dport
@@ -159,6 +191,25 @@ def send_flows():
         if not current_flows:
             continue
 
+        if not AUTH_TOKEN:
+            get_token()
+            continue
+
+        # ── NOUVEAU : récupérer la phase baseline ─────────────────────
+        try:
+            phase_resp = requests.get(
+                f'{DJANGO_URL}/api/alerts/baseline/phase/',
+                headers=get_headers(),
+                timeout=3
+            )
+            phase_data   = phase_resp.json() if phase_resp.ok else {}
+            phase_actuelle = phase_data.get('phase', 'production')
+            river_learn_threshold = phase_data.get('river_threshold', RIVER_AUTO_LEARN_THRESHOLD)
+        except Exception:
+            phase_actuelle        = 'production'  # fallback sécurisé
+            river_learn_threshold = RIVER_AUTO_LEARN_THRESHOLD
+        # ─────────────────────────────────────────────────────────────
+
         for key, flow in current_flows.items():
             if flow['count'] < 2:
                 continue
@@ -168,8 +219,8 @@ def send_flows():
                 **features,
                 'src_ip':   flow['src_ip'],
                 'dst_ip':   flow['dst_ip'],
-                'src_port': flow['src_port'],   # ← nouveau
-                'dst_port': flow['dst_port'],   # ← nouveau
+                'src_port': flow['src_port'],
+                'dst_port': flow['dst_port'],
                 'protocol': flow['protocol'],
             }
 
@@ -207,14 +258,34 @@ def send_flows():
                           f"{flow['src_ip']:15s}:{src_port:<5} → "
                           f"{flow['dst_ip']:15s}:{dst_port:<5}")
 
-                # River apprend seulement si confiance suffisante
-                if confidence >= RIVER_AUTO_LEARN_THRESHOLD:
+                # ── NOUVEAU : River gated par phase baseline ──────────
+                river_doit_apprendre = False
+
+                if phase_actuelle == 'learning':
+                    # En apprentissage : River apprend SEULEMENT le trafic Normal
+                    if not is_attack:
+                        river_doit_apprendre = True
+                        print(f"  📚 River [LEARNING] apprend trafic Normal")
+                    else:
+                        print(f"  📚 River [LEARNING] skip attaque — baseline en cours")
+
+                elif phase_actuelle == 'validation':
+                    # En validation : River n'apprend rien
+                    print(f"  ⏳ River [VALIDATION] en attente admin")
+
+                elif phase_actuelle == 'production':
+                    # En production : comportement normal avec seuil de confiance
+                    if confidence >= river_learn_threshold:
+                        river_doit_apprendre = True
+                    else:
+                        stats['river_skipped'] += 1
+                        if is_attack:
+                            print(f"  ⏸  River skip (conf {confidence:.2f}) → 'À vérifier'")
+
+                if river_doit_apprendre:
                     true_label = attack_type if is_attack else 'Normal'
                     river_learn(features, true_label)
-                else:
-                    stats['river_skipped'] += 1
-                    if is_attack:
-                        print(f"  ⏸  River skip (conf {confidence:.2f}) → 'À vérifier'")
+                # ─────────────────────────────────────────────────────
 
             except requests.exceptions.ConnectionError:
                 print("  ✗ Django/FastAPI non disponible")
@@ -233,20 +304,20 @@ def print_stats():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("  MYLO IDS — Capture + River Online Learning")
+    print("  Mylo IPS — Capture + River Online Learning")
     print("=" * 60)
 
     get_token()
     threading.Thread(target=send_flows, daemon=True).start()
     threading.Thread(target=print_stats, daemon=True).start()
 
-    print(f"\n  Interface  : {WIFI_IFACE}")
+    print(f"  Interfaces : {', '.join(CAPTURE_IFACES)}")
     print(f"  Fenêtre    : {WINDOW_SEC}s")
     print(f"  River seuil: confiance ≥ {RIVER_AUTO_LEARN_THRESHOLD}")
     print(f"\n  ✓  Normal | 🚨 Attaque | 🧠 River apprend | ⏸ River skip\n")
 
     try:
-        sniff(iface=WIFI_IFACE, prn=packet_to_flow, store=False, filter="ip")
+        sniff(iface=CAPTURE_IFACES, prn=packet_to_flow, store=False, filter="ip")
     except KeyboardInterrupt:
         print(f"\n  Arrêt — Capturés:{stats['captured']} | "
               f"River appris:{stats['river_learned']} | "

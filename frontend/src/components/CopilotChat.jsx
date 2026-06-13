@@ -96,7 +96,7 @@ APPRENTISSAGE EN LIGNE :
 ÉTAT ACTUEL : Aucune donnée disponible — système en attente de trafic.
 `
 
-  return `Tu es Mylo, un analyste SOC junior IA intégré dans un système de détection d'intrusions.
+  return `Tu es Mylo, un analyste SOC junior IA intégré dans un système de prévention d'intrusions.
 
 TON RÔLE :
 Tu aides l'analyste sécurité à comprendre ce qui se passe sur le réseau surveillé.

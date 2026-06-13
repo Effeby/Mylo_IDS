@@ -62,7 +62,7 @@
       "problemMatcher": []
     },
     {
-      "label": "🚀 MYLO IDS — Lancer tout",
+      "label": "🚀 Mylo IPS — Lancer tout",
       "dependsOn": [
         "🔵 FastAPI :8000",
         "🟢 Django :8001",

@@ -8,7 +8,7 @@ MODELS_DIR  = os.path.join(BASE_DIR, "ml", "models")
 # ─── CHARGEMENT ───────────────────────────────────────────────────────
 def load_models():
     """Charge tous les modèles et encoders au démarrage de l'API."""
-    print("  Chargement des modèles Mylo IDS...")
+    print("  Chargement des modèles Mylo IPS...")
 
     models = {}
 

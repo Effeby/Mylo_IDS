@@ -45,19 +45,19 @@ def load_river_model():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("\n" + "=" * 45)
-    print("  MYLO IDS — Démarrage API")
+    print("  Mylo IPS — Démarrage API")
     print("=" * 45)
     models = load_models()
     # Ajouter River dans le dict des modèles
     models["river_model"] = load_river_model()
     app_state["models"] = models
     yield
-    print("\n  MYLO IDS — Arrêt API")
+    print("\n  Mylo IPS — Arrêt API")
 
 # ─── APP ──────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="Mylo IDS API",
-    description="AI-powered Intrusion Detection System — SecureBank",
+    title="Mylo IPS API",
+    description="AI-powered Intrusion Prevention System",
     version="1.0.0",
     lifespan=lifespan
 )

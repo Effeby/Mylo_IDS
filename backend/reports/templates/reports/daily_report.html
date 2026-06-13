@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 14mm 18mm 14mm;
+    @top-left   { content: "🛡️ Mylo IPS"; font-size: 8pt; color: #888; }
+    @top-right  { content: "{{ organisation.name }} — {{ report_date }}"; font-size: 8pt; color: #888; }
+    @bottom-center { content: "Page " counter(page) " / " counter(pages); font-size: 8pt; color: #aaa; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1a1a2e; line-height: 1.5; }
+
+  /* ── En-tête ── */
+  .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #e63946; padding-bottom: 10px; margin-bottom: 18px; }
+  .header h1 { font-size: 20pt; color: #1a1a2e; }
+  .header .meta { font-size: 8.5pt; color: #555; text-align: right; }
+  .header .meta strong { color: #1a1a2e; }
+
+  /* ── Sections ── */
+  .section-title { font-size: 13pt; color: #1a1a2e; border-left: 4px solid #e63946; padding-left: 8px; margin: 22px 0 10px; }
+  .subsection-title { font-size: 10.5pt; color: #333; border-left: 3px solid #457b9d; padding-left: 6px; margin: 14px 0 8px; }
+  .part-divider { page-break-before: always; border-top: 2px dashed #e63946; margin: 0; padding-top: 16px; }
+
+  /* ── KPIs ── */
+  .kpi-grid { display: flex; gap: 10px; margin: 10px 0 16px; }
+  .kpi { background: #f4f4f8; border-radius: 8px; padding: 10px 14px; flex: 1; text-align: center; border-top: 3px solid #e63946; }
+  .kpi .value { font-size: 22pt; font-weight: bold; color: #e63946; }
+  .kpi .label { font-size: 7.5pt; color: #666; margin-top: 2px; }
+  .kpi.blue { border-top-color: #457b9d; }
+  .kpi.blue .value { color: #457b9d; }
+  .kpi.green { border-top-color: #2a9d8f; }
+  .kpi.green .value { color: #2a9d8f; }
+  .kpi.orange { border-top-color: #f4a261; }
+  .kpi.orange .value { color: #f4a261; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8.5pt; }
+  th { background: #1a1a2e; color: white; padding: 5px 8px; text-align: left; font-weight: 500; }
+  td { padding: 4px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  code { font-size: 8pt; background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+
+  /* ── Badges ── */
+  .badge { padding: 1px 7px; border-radius: 10px; font-size: 7.5pt; font-weight: 500; }
+  .badge-critical { background: #e63946; color: white; }
+  .badge-high     { background: #f4a261; color: white; }
+  .badge-medium   { background: #e9c46a; color: #333; }
+  .badge-low      { background: #2a9d8f; color: white; }
+  .badge-success  { background: #2a9d8f; color: white; }
+  .badge-warning  { background: #f4a261; color: white; }
+  .badge-danger   { background: #e63946; color: white; }
+
+  /* ── Audit IA ── */
+  .metric-row { display: flex; gap: 10px; margin: 8px 0; }
+  .metric-box { flex: 1; background: #f4f4f8; border-radius: 6px; padding: 8px 12px; text-align: center; }
+  .metric-box .val { font-size: 18pt; font-weight: bold; color: #1a1a2e; }
+  .metric-box .lbl { font-size: 7.5pt; color: #666; }
+  .finding-row { display: flex; justify-content: space-between; padding: 5px 8px; border-bottom: 1px solid #eee; font-size: 8.5pt; }
+  .finding-row:nth-child(even) { background: #f9f9f9; }
+  .risk-matrix { margin: 10px 0; }
+  .risk-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 8.5pt; border-bottom: 1px solid #f0f0f0; }
+  .risk-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-high   { background: #e63946; }
+  .dot-medium { background: #f4a261; }
+  .dot-low    { background: #2a9d8f; }
+
+  .no-data { color: #aaa; font-style: italic; font-size: 8.5pt; padding: 6px 0; }
+  .footer-note { margin-top: 30px; font-size: 7.5pt; color: #aaa; border-top: 1px solid #eee; padding-top: 8px; text-align: center; }
+  .classes-grid { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .class-badge { background: #e8f4f8; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 7.5pt; border: 1px solid #c0d8e8; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  EN-TÊTE                                                       -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="header">
+  <div>
+    <h1>🛡️ Mylo IPS</h1>
+    <div style="font-size:9pt;color:#555;margin-top:3px;">Rapport de sécurité quotidien — Intelligence artificielle</div>
+  </div>
+  <div class="meta">
+    Organisation : <strong>{{ organisation.name }}</strong><br>
+    Période : <strong>{{ report_date }}</strong><br>
+    Généré le : {{ generated_at|date:"d/m/Y à H:i" }}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  PARTIE 1 — RAPPORT OPÉRATIONNEL SOC                          -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="section-title">PARTIE 1 — Rapport opérationnel SOC</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="value">{{ total_alerts }}</div>
+    <div class="label">Alertes détectées</div>
+  </div>
+  <div class="kpi blue">
+    <div class="value">{{ incidents|length }}</div>
+    <div class="label">Incidents corrélés</div>
+  </div>
+  <div class="kpi">
+    <div class="value">{{ blocked_ips|length }}</div>
+    <div class="label">IPs bloquées</div>
+  </div>
+  <div class="kpi green">
+    <div class="value">{{ audit_logs|length }}</div>
+    <div class="label">Entrées d'audit</div>
+  </div>
+  <div class="kpi orange">
+    <div class="value">{{ low_confidence_pct }}%</div>
+    <div class="label">Alertes à vérifier</div>
+  </div>
+</div>
+
+<!-- 1.1 Alertes par type -->
+<div class="subsection-title">1.1 Distribution des attaques détectées</div>
+{% if alerts_by_type %}
+<table>
+  <tr><th>Type d'attaque</th><th style="width:80px;text-align:right;">Nombre</th><th style="width:100px;text-align:right;">% du total</th></tr>
+  {% for row in alerts_by_type %}
+  <tr>
+    <td>{{ row.attack_type }}</td>
+    <td style="text-align:right;">{{ row.count }}</td>
+    <td style="text-align:right;">
+      {% if total_alerts %}{{ row.count|floatformat:0 }}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="no-data">Aucune alerte enregistrée sur la période.</p>
+{% endif %}
+
+<!-- 1.2 Alertes critiques -->
+<div class="subsection-title">1.2 Alertes critiques (confiance ≥ 85%)</div>
+{% if critical_alerts %}
+<table>
+  <tr><th>Heure</th><th>IP source</th><th>IP dest.</th><th>Protocole</th><th>Type</th><th>Sévérité</th><th>Confiance</th></tr>
+    {% for alert in critical_alerts %}
+    <tr>
+    <td>{{ alert.detected_at|date:"H:i:s" }}</td>
+    <td><code>{{ alert.src_ip }}</code></td>
+    <td><code>{{ alert.dst_ip }}</code></td>
+    <td>{{ alert.protocol|default:"—" }}</td>
+    <td>{{ alert.attack_type }}</td>
+    <td><span class="badge badge-{{ alert.severity|lower }}">{{ alert.severity }}</span></td>
+    <td>{{ alert.attack_confidence|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="no-data">Aucune alerte critique sur la période.</p>
+{% endif %}
+
+<!-- 1.3 Incidents corrélés -->
+<div class="subsection-title">1.3 Incidents corrélés</div>
+{% if incidents %}
+<table>
+  <!-- Nouveau -->
+    <tr><th>IP source</th><th>Scénario</th><th>Risque</th><th>Alertes</th><th>Prochaine étape prédite</th><th>Heure</th></tr>
+    {% for inc in incidents %}
+    <tr>
+    <td><code>{{ inc.src_ip }}</code></td>
+    <td>{{ inc.scenario_type }}</td>
+    <td><span class="badge badge-{{ inc.risk_level|lower }}">{{ inc.risk_level }}</span></td>
+    <td style="text-align:center;">{{ inc.alert_count }}</td>
+    <td>{{ inc.next_step_prediction|default:"—" }}</td>
+    <td>{{ inc.created_at|date:"H:i" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="no-data">Aucun incident corrélé sur la période.</p>
+{% endif %}
+
+<!-- 1.4 IPs bloquées -->
+<div class="subsection-title">1.4 IPs bloquées automatiquement</div>
+{% if blocked_ips %}
+<table>
+  <!-- Nouveau -->
+    <tr><th>Adresse IP</th><th>Raison</th><th>Nb alertes</th><th>Bloqué par</th><th>Expire le</th><th>Heure</th></tr>
+    {% for ip in blocked_ips %}
+    <tr>
+    <td><code>{{ ip.ip_address }}</code></td>
+    <td>{{ ip.reason }}</td>
+    <td style="text-align:center;">{{ ip.alert_count }}</td>
+    <td>{{ ip.blocked_by|default:"Auto" }}</td>
+    <td>{{ ip.expires_at|date:"d/m H:i"|default:"∞" }}</td>
+    <td>{{ ip.created_at|date:"H:i" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="no-data">Aucune IP bloquée sur la période.</p>
+{% endif %}
+
+<!-- 1.5 Journal d'audit -->
+<div class="subsection-title">1.5 Journal d'audit SOC (50 dernières entrées)</div>
+{% if audit_logs %}
+<table>
+    <tr><th>Heure</th><th>Utilisateur</th><th>Action</th><th>Objet</th><th>IP</th><th>Statut</th></tr>
+    {% for log in audit_logs %}
+    <tr>
+    <td>{{ log.timestamp|date:"H:i" }}</td>
+    <td>{{ log.username|default:log.user.username }}</td>
+    <td>{{ log.action }}</td>
+    <td>{{ log.object_repr|default:"—" }}</td>
+    <td><code>{{ log.ip_address|default:"—" }}</code></td>
+    <td>
+        {% if log.success %}
+        <span class="badge badge-success">OK</span>
+        {% else %}
+        <span class="badge badge-danger">Échec</span>
+        {% endif %}
+    </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="no-data">Aucune entrée d'audit sur la période.</p>
+{% endif %}
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  PARTIE 2 — RAPPORT D'AUDIT IA                                -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<div class="part-divider"></div>
+<div class="section-title">PARTIE 2 — Rapport d'audit IA (Modèle XGBoost)</div>
+
+<div style="font-size:8.5pt;color:#555;margin-bottom:12px;">
+  Système audité : <strong>Mylo IPS — Moteur de détection XGBoost + River (Online Learning)</strong><br>
+  Version : <strong>{{ ml_metrics.training_date }}</strong> &nbsp;|&nbsp;
+  Auditeur : <strong>Mylo IPS (automatique)</strong> &nbsp;|&nbsp;
+  Date du rapport : <strong>{{ report_date }}</strong>
+</div>
+
+<!-- 2.1 Résumé exécutif -->
+<div class="subsection-title">2.1 Résumé exécutif</div>
+<div class="metric-row">
+  <div class="metric-box">
+    <div class="val">{{ ml_metrics.accuracy }}%</div>
+    <div class="lbl">Précision globale</div>
+  </div>
+  <div class="metric-box">
+    <div class="val">{{ ml_metrics.f1_score }}</div>
+    <div class="lbl">F1-Score</div>
+  </div>
+  <div class="metric-box">
+    <div class="val">{{ ml_metrics.classes|length }}</div>
+    <div class="lbl">Classes détectées</div>
+  </div>
+  <div class="metric-box">
+    <div class="val">{{ ml_metrics.river_updates }}</div>
+    <div class="lbl">Mises à jour River</div>
+  </div>
+  <div class="metric-box">
+    <div class="val"><span class="badge badge-{{ model_health_color }}">{{ model_health }}</span></div>
+    <div class="lbl">Santé du modèle</div>
+  </div>
+</div>
+
+<!-- 2.2 Classes détectées -->
+<div class="subsection-title">2.2 Classes d'attaques couvertes</div>
+<div class="classes-grid">
+  {% for cls in ml_metrics.classes %}
+  <span class="class-badge">{{ cls }}</span>
+  {% endfor %}
+</div>
+
+<!-- 2.3 Analyse de drift (distribution du jour vs baseline) -->
+<div class="subsection-title">2.3 Analyse de dérive (distribution du jour)</div>
+{% if prediction_distribution %}
+<table>
+  <tr><th>Type prédit</th><th style="width:80px;text-align:right;">Volume</th><th>Indicateur</th></tr>
+  {% for row in prediction_distribution %}
+  <tr>
+    <td>{{ row.attack_type }}</td>
+    <td style="text-align:right;">{{ row.count }}</td>
+    <td>
+      {% if row.attack_type == "BENIGN" %}
+        <span class="badge badge-success">Normal</span>
+      {% else %}
+        <span class="badge badge-danger">Menace</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+<p style="font-size:8pt;color:#666;margin-top:6px;">
+  Alertes basse confiance (&lt;70%) : <strong>{{ low_confidence_alerts }}</strong> ({{ low_confidence_pct }}% du total).
+  {% if low_confidence_pct > 15 %}
+  ⚠️ Taux élevé — un réentraînement ou un ajustement de seuil est recommandé.
+  {% else %}
+  ✅ Taux acceptable.
+  {% endif %}
+</p>
+{% else %}
+<p class="no-data">Aucune prédiction sur la période.</p>
+{% endif %}
+
+<!-- 2.4 Conformité et risques -->
+<div class="subsection-title">2.4 Constats et évaluation des risques</div>
+<div class="finding-row" style="font-weight:500;background:#f0f0f0;">
+  <span>Dimension auditée</span><span>Constat</span><span>Sévérité</span>
+</div>
+<div class="finding-row">
+  <span>Précision du modèle</span>
+  <span>Accuracy {{ ml_metrics.accuracy }}% {% if ml_metrics.accuracy >= 90 %}— objectif atteint (≥90%){% else %}— en dessous du seuil{% endif %}</span>
+  <span><span class="badge {% if ml_metrics.accuracy >= 90 %}badge-success{% else %}badge-danger{% endif %}">{% if ml_metrics.accuracy >= 90 %}Faible{% else %}Élevée{% endif %}</span></span>
+</div>
+<div class="finding-row">
+  <span>Dérive du modèle</span>
+  <span>{{ low_confidence_pct }}% d'alertes basse confiance</span>
+  <span><span class="badge badge-{{ model_health_color }}">{% if low_confidence_pct > 30 %}Élevée{% elif low_confidence_pct > 15 %}Moyenne{% else %}Faible{% endif %}</span></span>
+</div>
+<div class="finding-row">
+  <span>Online Learning (River)</span>
+  <span>{{ ml_metrics.river_updates }} mises à jour incrémentales enregistrées</span>
+  <span><span class="badge badge-success">Opérationnel</span></span>
+</div>
+<div class="finding-row">
+  <span>Couverture des classes</span>
+  <span>{{ ml_metrics.classes|length }} classes — couverture complète des vecteurs CICIDS</span>
+  <span><span class="badge badge-success">Faible</span></span>
+</div>
+<div class="finding-row">
+  <span>Explicabilité</span>
+  <span>Scores de confiance disponibles par alerte (pas de SHAP implémenté)</span>
+  <span><span class="badge badge-warning">Moyenne</span></span>
+</div>
+<div class="finding-row">
+  <span>Gouvernance</span>
+  <span>RBAC 5 rôles, AuditLog actif, isolation multi-tenant vérifiée</span>
+  <span><span class="badge badge-success">Faible</span></span>
+</div>
+
+<!-- 2.5 Recommandations -->
+<div class="subsection-title">2.5 Recommandations</div>
+<table>
+  <tr><th>#</th><th>Recommandation</th><th>Priorité</th><th>Échéance</th></tr>
+  {% if low_confidence_pct > 15 %}
+  <tr>
+    <td>1</td>
+    <td>Réentraîner le modèle XGBoost — taux de basse confiance ({{ low_confidence_pct }}%) anormal</td>
+    <td><span class="badge badge-danger">Haute</span></td>
+    <td>7 jours</td>
+  </tr>
+  {% endif %}
+  <tr>
+    <td>{% if low_confidence_pct > 15 %}2{% else %}1{% endif %}</td>
+    <td>Implémenter SHAP pour l'explicabilité des décisions du modèle</td>
+    <td><span class="badge badge-warning">Moyenne</span></td>
+    <td>30 jours</td>
+  </tr>
+  <tr>
+    <td>{% if low_confidence_pct > 15 %}3{% else %}2{% endif %}</td>
+    <td>Ajouter des métriques d'équité par classe dans le tableau de bord</td>
+    <td><span class="badge badge-low">Faible</span></td>
+    <td>60 jours</td>
+  </tr>
+</table>
+
+<!-- 2.6 Plan de suivi -->
+<div class="subsection-title">2.6 Plan de suivi continu</div>
+<div style="font-size:8.5pt;">
+  <div class="risk-item"><div class="risk-dot dot-high"></div><strong>Quotidien :</strong>&nbsp;Ce rapport automatique — taux de basse confiance, volume d'alertes, IPs bloquées</div>
+  <div class="risk-item"><div class="risk-dot dot-medium"></div><strong>Mensuel :</strong>&nbsp;Réévaluation du F1-Score sur nouvelles captures réseau GNS3</div>
+  <div class="risk-item"><div class="risk-dot dot-low"></div><strong>Trimestriel :</strong>&nbsp;Audit complet — mise à jour datasets CICIDS, test de robustesse adversariale</div>
+</div>
+
+<div class="footer-note">
+  Rapport généré automatiquement par <strong>Mylo IPS</strong> — Système de détection d'intrusion IA.<br>
+  {{ organisation.name }} — {{ generated_at|date:"Y" }}
+</div>
+
+</body>
+</html>

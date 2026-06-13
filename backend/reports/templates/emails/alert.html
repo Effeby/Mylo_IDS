@@ -1,0 +1,109 @@
+<!-- prettier-ignore -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alerte Mylo IPS</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:32px auto;background:#0F1629;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.3);">
+    
+    <!-- Header -->
+    <div style="padding:24px 28px;background:#1E2D4F;border-left:5px solid {{ border_color }};">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:28px;">🚨</div>
+        <div>
+          <h1 style="margin:0;font-size:18px;color:{{ severity_color }};font-weight:800;">
+            Alerte {{ severity }} — {{ attack_type }}
+          </h1>
+          <p style="margin:4px 0 0;color:#94A3B8;font-size:13px;">
+            {{ org_name }} · Mylo IPS Security Center
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div style="padding:16px 28px;background:#0F1629;border-bottom:1px solid #1E2D4F;display:flex;gap:10px;flex-wrap:wrap;">
+      <span style="padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;background:{{ severity_bg }};color:{{ severity_color }};">
+        {{ severity }}
+      </span>
+      {% if is_behavioral %}
+      <span style="padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(168,85,247,0.15);color:#A855F7;">
+        🔍 Anomalie comportementale
+      </span>
+      {% else %}
+      <span style="padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(59,130,246,0.15);color:#3B82F6;">
+        🤖 Détection ML (XGBoost)
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Détails -->
+    <div style="padding:24px 28px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;color:#F8FAFC;">
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;width:160px;font-size:12px;text-transform:uppercase;font-weight:600;">Type</td>
+          <td style="padding:10px 0;font-weight:700;color:{{ severity_color }};">{{ attack_type }}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">IP Source</td>
+          <td style="padding:10px 0;font-family:monospace;color:#60A5FA;font-size:15px;">{{ src_ip }}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">IP Destination</td>
+          <td style="padding:10px 0;font-family:monospace;color:#94A3B8;">{{ dst_ip }}</td>
+        </tr>
+        {% if is_behavioral %}
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">Score anomalie</td>
+          <td style="padding:10px 0;font-weight:700;color:{{ severity_color }};">{{ anomaly_score }}/10</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">Anomalies détectées</td>
+          <td style="padding:10px 0;color:#F8FAFC;">{{ anomaly_detail }}</td>
+        </tr>
+        {% else %}
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">Confiance ML</td>
+          <td style="padding:10px 0;">{{ confidence }}%</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">Score final</td>
+          <td style="padding:10px 0;">{{ final_score }}/10</td>
+        </tr>
+        {% endif %}
+        <tr style="border-bottom:1px solid #1E2D4F;">
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">Actif ciblé</td>
+          <td style="padding:10px 0;">{{ asset_name }} <span style="color:#475569;">({{ asset_criticality }})</span></td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0;color:#64748B;font-size:12px;text-transform:uppercase;font-weight:600;">Détectée le</td>
+          <td style="padding:10px 0;color:#94A3B8;">{{ detected_at }}</td>
+        </tr>
+      </table>
+    </div>
+
+    {% if is_behavioral %}
+    <!-- Bloc spécial behavioral -->
+    <div style="margin:0 28px 20px;padding:14px 16px;border-radius:8px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);">
+      <div style="font-size:12px;color:#A855F7;font-weight:700;margin-bottom:6px;">ℹ️ À PROPOS DE CETTE ALERTE</div>
+      <p style="margin:0;font-size:13px;color:#94A3B8;line-height:1.5;">
+        Cette alerte est une <strong style="color:#F8FAFC;">anomalie comportementale</strong> — 
+        l'IP {{ src_ip }} s'écarte significativement de son comportement habituel. 
+        Ce n'est pas une attaque confirmée mais mérite investigation.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div style="padding:16px 28px;background:#0A0E1A;text-align:center;">
+      <p style="margin:0;font-size:12px;color:#475569;">
+        Mylo IPS · <a href="https://mylo-ids.site" style="color:#3B82F6;text-decoration:none;">mylo-ids.site</a> · Alerte automatique — ne pas répondre
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>

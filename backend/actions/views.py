@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from river import tree, preprocessing, metrics
 from .models import RiverMetrics
 
+
 # ─── CHEMINS ──────────────────────────────────────────────────────────
 BASE_DIR         = Path(__file__).resolve().parent.parent.parent
 MODELS_DIR       = BASE_DIR / 'ml' / 'models'

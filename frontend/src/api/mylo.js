@@ -2,14 +2,17 @@ import axios from 'axios'
 
 // ─── CLIENTS AXIOS ────────────────────────────────────────────────────
 // Django Backend (auth + BDD + River)
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL || 'http://localhost:8000'
+
 const django = axios.create({
-  baseURL: 'http://localhost:8001',
+  baseURL: DJANGO_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 
 // FastAPI (inférence XGBoost directe)
 const fastapi = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: FASTAPI_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -45,10 +48,41 @@ django.interceptors.response.use(
 // ─── AUTH ──────────────────────────────────────────────────────────────
 export const login = async (username, password) => {
   const { data } = await django.post('/api/auth/login/', { username, password })
-  localStorage.setItem('mylo_access',  data.access)
-  localStorage.setItem('mylo_refresh', data.refresh)
-  localStorage.setItem('mylo_user',    JSON.stringify(data.user))
-  return data.user
+  return data
+}
+
+export const getTotpSetup = async () => {
+  const { data } = await django.get('/api/auth/totp/setup/')
+  return data
+}
+
+export const activateTotp = async (code) => {
+  const { data } = await django.post('/api/auth/totp/activate/', { code })
+  return data
+}
+
+export const verifyTotpWithToken = async (code, accessToken) => {
+  const { data } = await axios.post(`${DJANGO_URL}/api/auth/totp/verify/`, { code }, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  return data
+}
+
+export const changeMyPassword = async (password, currentPassword = '', accessToken = null) => {
+  const headers = { 'Content-Type': 'application/json' }
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
+  }
+  const { data } = await axios.patch(`${DJANGO_URL}/api/auth/me/`, {
+    password,
+    current_password: currentPassword,
+  }, { headers })
+  return data
+}
+
+export const resetUserTotp = async (userId) => {
+  const { data } = await django.post(`/api/auth/totp/reset/${userId}/`)
+  return data
 }
 
 export const logout = async () => {
@@ -64,6 +98,11 @@ export const logout = async () => {
 export const getUser = () => {
   try { return JSON.parse(localStorage.getItem('mylo_user')) }
   catch { return null }
+}
+
+export const getOrganisationName = () => {
+  const user = getUser()
+  return user?.organisation?.name || 'Mon organisation'
 }
 
 export const isAuthenticated = () => !!localStorage.getItem('mylo_access')
@@ -129,7 +168,7 @@ export const fastapiHealth = () =>
 export const fastapiStats = () =>
   fastapi.get('/stats').then(r => r.data)
 
-// ─── SIMULATION (trafic réseau SecureBank) ────────────────────────────
+// ─── SIMULATION (trafic réseau exemple) ─────────────────────────────────
 const ATTACK_SAMPLES = {
   Normal:      { src_bytes: 215, dst_bytes: 45076, duration: 0, logged_in: 1, count: 8, srv_count: 8, serror_rate: 0, rerror_rate: 0, same_srv_rate: 1, diff_srv_rate: 0, dst_host_count: 9, dst_host_srv_count: 9, dst_host_same_srv_rate: 1, dst_host_diff_srv_rate: 0.11, dst_host_same_src_port_rate: 0.11, dst_host_serror_rate: 0, dst_host_rerror_rate: 0, srv_serror_rate: 0, flag: 10, protocol_type: 2, duration: 0 },
   DoS:         { src_bytes: 0, dst_bytes: 0, duration: 0, logged_in: 0, count: 511, srv_count: 511, serror_rate: 1, rerror_rate: 0, same_srv_rate: 1, diff_srv_rate: 0, dst_host_count: 255, dst_host_srv_count: 255, dst_host_same_srv_rate: 1, dst_host_diff_srv_rate: 0, dst_host_same_src_port_rate: 1, dst_host_serror_rate: 1, dst_host_rerror_rate: 0, srv_serror_rate: 1, flag: 5, protocol_type: 2 },

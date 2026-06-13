@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
 import os
+import json
 
 # ─── COLONNES NSL-KDD ─────────────────────────────────────────────────
 columns = [
@@ -82,7 +83,7 @@ def ensure_features(df):
     return df
 
 print("=" * 60)
-print("  MYLO IDS — XGBoost 9 Classes  (v3)")
+print("  Mylo IPS — XGBoost 9 Classes  (v3)")
 print("  Test set stratifié sur toutes les sources")
 print("  Lancer depuis : D:\\MYLO\\")
 print("=" * 60)
@@ -371,7 +372,7 @@ plt.close()
 imp = pd.Series(model_binary.feature_importances_, index=top_features)
 plt.figure(figsize=(8, 7))
 imp.nlargest(15).sort_values().plot(kind="barh", color="steelblue")
-plt.title("Mylo IDS — Feature Importance")
+plt.title("Mylo IPS — Feature Importance")
 plt.tight_layout()
 plt.savefig("ml/outputs/feature_importance_9cls.png")
 plt.close()
@@ -383,7 +384,7 @@ colors = ["#e74c3c" if v < 0.40 else "#f39c12" if v < 0.70 else "#2ecc71"
 plt.figure(figsize=(9, 5))
 f1_series.plot(kind="barh", color=colors)
 plt.axvline(x=0.70, color='gray', linestyle='--', alpha=0.7)
-plt.title("Mylo IDS — F1 par classe (vert ≥ 0.70)")
+plt.title("Mylo IPS — F1 par classe (vert ≥ 0.70)")
 plt.tight_layout()
 plt.savefig("ml/outputs/f1_par_classe.png")
 plt.close()
@@ -406,5 +407,22 @@ print("  → ml/models/xgb_features.pkl")
 print("  → ml/models/label_encoder.pkl")
 print("  → ml/models/class_thresholds.pkl")
 print("\n" + "=" * 60)
-print("  Mylo IDS — 8 datasets — 9 classes — test honnête ✓")
+print("  Mylo IPS — 8 datasets — 9 classes — test honnête ✓")
 print("=" * 60)
+
+
+
+metrics = {
+    "accuracy": round(float(acc_multi) * 100, 2),
+    "f1_score": round(float(f1_score(y_test, y_pred_multi, average='weighted', zero_division=0)), 4),
+    "classes": list(label_encoder.classes_),
+    "training_date": str(date.today()),
+    "total_samples": int(len(X_train)),
+    "river_updates": 0,  # mis à jour par River à chaque prédiction
+}
+
+out_path = os.path.join(os.path.dirname(__file__), "outputs/model_metrics.json")
+os.makedirs(os.path.dirname(out_path), exist_ok=True)
+with open(out_path, "w") as f:
+    json.dump(metrics, f, indent=2)
+print(f"[Mylo] Métriques sauvegardées → {out_path}")

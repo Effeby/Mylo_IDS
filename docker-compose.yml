@@ -1,0 +1,141 @@
+services:
+  db:
+    image: postgres:15
+    container_name: mylo_postgres_bd
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mylo_db
+      POSTGRES_USER: dydybinks
+      POSTGRES_PASSWORD: Kalinux@203
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: mylo_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  api:
+    image: dydybinks1/mylo-api:1.0.0
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: mylo_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./api:/app/api
+      - ./ml:/app/ml
+    depends_on:
+      - db
+      - redis
+
+  backend:
+    image: dydybinks1/mylo-backend:1.0.0
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mylo_backend
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8001
+    working_dir: /app/backend
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - api
+
+  celery-worker:
+    image: dydybinks1/mylo-celery-worker:1.0.0
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mylo_celery_worker
+    restart: unless-stopped
+    command: celery -A core worker --loglevel=info
+    working_dir: /app/backend
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - api
+
+  celery-beat:
+    image: dydybinks1/mylo-celery-beat:1.0.0
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mylo_celery_beat
+    restart: unless-stopped
+    command: celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    working_dir: /app/backend
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - api
+
+  frontend:
+    image: dydybinks1/mylo-frontend:1.0.0
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: mylo_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env
+    environment:
+      # Le frontend s'exécute dans le navigateur du host, donc il doit atteindre les services via localhost
+      VITE_DJANGO_URL: http://localhost:8001
+      VITE_FASTAPI_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+      - api
+
+  capture:
+    image: dydybinks1/mylo-capture:1.0.0
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    container_name: mylo_capture
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - CAPTURE_IFACE=enp0s3,enp0s8,enp0s9
+      - MYLO_DJANGO_URL=http://backend:8001
+    volumes:
+      - ./.env.capture:/app/.env.capture:ro
+      - ./ml/models:/app/ml/models:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

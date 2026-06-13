@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Activity, Wifi, AlertTriangle, CheckCircle, Search, Filter, Ban, X } from 'lucide-react'
 import { useMonitor } from '../context/MonitorContext'
 import AlertBadge from '../components/AlertBadge'
-import { blockIP } from '../api/mylo'
+import { blockIP, getOrganisationName } from '../api/mylo'
 
 const ATTACK_TYPES = ['Tous', 'DoS', 'DDoS', 'Probe', 'R2L', 'U2R', 'BruteForce', 'WebAttack', 'Botnet', 'Infiltration', 'Normal']
 
@@ -86,7 +86,7 @@ export default function Monitor() {
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Moniteur en direct</h1>
           <p style={{ margin: '4px 0 0', color: '#94A3B8', fontSize: 13 }}>
-            Analyse du trafic réseau en temps réel — SecureBank · 9 classes
+            Analyse du trafic réseau en temps réel — {getOrganisationName()}
           </p>
         </div>
         <button onClick={running ? stop : start} style={{
@@ -306,7 +306,11 @@ export default function Monitor() {
                   color: typeColor, fontWeight: 600, fontSize: 12,
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}>
-                  {r.attack_type}
+                  {r.attack_type === 'Behavioral' ? (
+                    <span style={{ color: '#A855F7' }}>
+                      Anomalie <span style={{ fontSize: 10, color: '#64748B' }}>⬡ Comportemental</span>
+                    </span>
+                  ) : r.attack_type}
                 </span>
 
                 {/* Sévérité */}

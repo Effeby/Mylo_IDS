@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Bell, RefreshCw, Filter, CheckCircle, XCircle, AlertTriangle, Calendar, X, RotateCcw } from 'lucide-react'
-import { getAlerts, updateAlertStatus, blockIP } from '../api/mylo'
+import { getAlerts, updateAlertStatus, blockIP, getOrganisationName } from '../api/mylo'
 import AlertBadge from '../components/AlertBadge'
 
 const FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL || 'http://localhost:8000'
@@ -241,7 +241,7 @@ export default function Alerts() {
           <h1 style={{ margin:0, fontSize:22, fontWeight:800 }}>Alertes</h1>
           <p style={{ margin:'4px 0 0', color:'#94A3B8', fontSize:13 }}>
             {filteredAlerts.length} alerte{filteredAlerts.length !== 1 ? 's' : ''}
-            {hasActiveFilters ? ' (filtrées)' : ' — BDD SecureBank'}
+            {hasActiveFilters ? ' (filtrées)' : ` — ${getOrganisationName()}`}
           </p>
         </div>
         <button onClick={load} style={{
@@ -431,6 +431,25 @@ export default function Alerts() {
             <Row label={`Confiance "${selected.attack_type}"`} value={`${(selected.attack_confidence*100).toFixed(2)}%`} />
           </Section>
 
+          {selected.features?.anomaly_detail && (
+            <Section title="Anomalie comportementale">
+              <Row label="Type"   value={selected.features.anomaly_type || '—'} />
+              <Row label="Détail" value={selected.features.anomaly_detail || '—'} />
+              {Array.isArray(selected.features.anomalies) && selected.features.anomalies.length > 0 && (
+                <div style={{ display:'grid', gap:8, marginTop:8 }}>
+                  {selected.features.anomalies.map((a, idx) => (
+                    <div key={idx} style={{ padding:'10px', borderRadius:10, background:'#0F1629', border:'1px solid #1E2D4F' }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:'#F8FAFC' }}>{a.type || `Anomalie ${idx + 1}`}</div>
+                      <div style={{ fontSize:12, color:'#94A3B8', marginTop:4 }}>{a.detail || JSON.stringify(a)}</div>
+                      {a.z_score !== undefined && <div style={{ fontSize:11, color:'#64748B', marginTop:4 }}>Z-score: {a.z_score}</div>}
+                      {a.severity && <div style={{ fontSize:11, color:'#64748B' }}>Sévérité: {a.severity}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Section>
+          )}
+
           {/* ── ATTACK REPLAY ─────────────────────────────────────── */}
           <Section title="Attack Replay — Rejouer avec le modèle actuel">
             <p style={{ color:'#64748B', fontSize:12, margin:'0 0 12px' }}>
@@ -553,11 +572,23 @@ function Section({ title, children }) {
 }
 
 function Row({ label, value, mono }) {
+  const renderValue = () => {
+    if (value === null || value === undefined) return '—'
+    if (typeof value === 'number' || typeof value === 'string') return value
+    if (typeof value === 'boolean') return value ? 'true' : 'false'
+    if (Array.isArray(value)) return value.join(', ')
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+
   return (
     <div style={{ display:'flex', justifyContent:'space-between', fontSize:13 }}>
       <span style={{ color:'#64748B' }}>{label}</span>
       <span style={{ color:'#F8FAFC', fontFamily: mono ? 'monospace' : 'inherit', fontSize: mono ? 12 : 13 }}>
-        {value ?? '—'}
+        {renderValue()}
       </span>
     </div>
   )

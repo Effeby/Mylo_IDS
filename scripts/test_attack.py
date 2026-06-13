@@ -1,4 +1,4 @@
-# Test attaque Mylo IDS — declenche une notification Telegram
+# Test attaque Mylo IPS — declenche une notification Telegram
 # Lance : python test_attack.py
 import requests
 import json
@@ -26,7 +26,7 @@ try:
         f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage',
         json={
             'chat_id':    TELEGRAM_CHAT,
-            'text':       '🧪 <b>MYLO IDS — Test de connexion</b>\nTelegram opérationnel ✅',
+            'text':       '🧪 <b>Mylo IPS — Test de connexion</b>\nTelegram opérationnel ✅',
             'parse_mode': 'HTML',
         },
         timeout=10
@@ -120,7 +120,7 @@ ATTACKS = [
 ]
 
 print("\n" + "="*60)
-print("  MYLO IDS — Test Attaques + Notification Telegram")
+print("  Mylo IPS — Test Attaques + Notification Telegram")
 print("="*60)
 
 for attack in ATTACKS:
@@ -156,7 +156,7 @@ for attack in ATTACKS:
                 json={
                     'chat_id':    TELEGRAM_CHAT,
                     'text':       (
-                        f'<b>MYLO IDS — ATTAQUE DETECTEE</b>\n'
+                        f'<b>Mylo IPS — ATTAQUE DETECTEE</b>\n'
                         f'Type     : {attack_type}\n'
                         f'Severite : {severity}\n'
                         f'IP       : {attack["payload"].get("src_ip")} -> {attack["payload"].get("dst_ip")}\n'
