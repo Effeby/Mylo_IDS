@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import httpx
+import os
 from datetime import datetime
 from .schemas import TrafficInput, PredictionResult
 
@@ -30,6 +32,7 @@ SEVERITY_MAP = {
     "Infiltration":"CRITICAL",
     "R2L":         "CRITICAL",
     "U2R":         "CRITICAL",
+    "Anomalie":    "HIGH",       # Zero-day détecté par Isolation Forest
 }
 
 IP_WHITELIST_PREFIXES = [
@@ -46,8 +49,19 @@ IP_WHITELIST_PREFIXES = [
 
 CONFIDENCE_ALERT_THRESHOLD = 0.70
 
-# ─── Seuil River — confiance minimale pour que River override XGBoost ─────────
+# Seuil River — confiance minimale pour que River override XGBoost
 RIVER_OVERRIDE_THRESHOLD = 0.75
+
+# ─── Isolation Forest — seuil score anomalie ─────────────────────────
+# score_samples retourne des valeurs négatives : plus c'est bas, plus c'est anormal
+# -0.5 est un seuil raisonnable (les normaux sont autour de -0.36 en moyenne)
+IF_SCORE_THRESHOLD = -0.50
+
+# ─── AbuseIPDB ────────────────────────────────────────────────────────
+ABUSEIPDB_API_KEY   = os.getenv("ABUSEIPDB_API_KEY", "")
+ABUSEIPDB_URL       = "https://api.abuseipdb.com/api/v2/check"
+# Score de confiance AbuseIPDB au-delà duquel on force is_attack=True
+ABUSEIPDB_THRESHOLD = 50
 
 
 def is_whitelisted(ip: str) -> bool:
@@ -105,12 +119,10 @@ def get_river_prediction(features_dict: dict, models: dict) -> dict | None:
         if river_model is None:
             return None
 
-        # River ne prédit bien qu'après avoir appris suffisamment
         total_learned = getattr(river_model, '_n_samples_seen', 0)
         if total_learned < 10:
             return None
 
-        # Prédiction River avec probabilités
         proba = river_model.predict_proba_one(features_dict)
         if not proba:
             return None
@@ -127,13 +139,65 @@ def get_river_prediction(features_dict: dict, models: dict) -> dict | None:
         return None
 
 
+def get_isolation_forest_result(X: pd.DataFrame, models: dict) -> dict:
+    """
+    Interroge l'Isolation Forest pour détecter une anomalie potentielle zero-day.
+    Retourne un dict avec is_anomaly (bool) et anomaly_score (float).
+    """
+    iso = models.get("isolation_forest")
+    if iso is None:
+        return {"is_anomaly": False, "anomaly_score": 0.0, "if_available": False}
+
+    try:
+        score = float(iso.score_samples(X)[0])
+        is_anomaly = score < IF_SCORE_THRESHOLD
+        return {
+            "is_anomaly":    is_anomaly,
+            "anomaly_score": round(score, 4),
+            "if_available":  True,
+        }
+    except Exception:
+        return {"is_anomaly": False, "anomaly_score": 0.0, "if_available": False}
+
+
+def check_abuseipdb(ip: str) -> dict:
+    """
+    Interroge AbuseIPDB pour obtenir le score de réputation d'une IP.
+    Retourne un dict vide si la clé API n'est pas configurée ou si erreur.
+    """
+    if not ABUSEIPDB_API_KEY or not ip or is_whitelisted(ip):
+        return {}
+
+    try:
+        with httpx.Client(timeout=3.0) as client:
+            resp = client.get(
+                ABUSEIPDB_URL,
+                headers={"Key": ABUSEIPDB_API_KEY, "Accept": "application/json"},
+                params={"ipAddress": ip, "maxAgeInDays": 30},
+            )
+            if resp.status_code == 200:
+                data = resp.json().get("data", {})
+                return {
+                    "abuse_score":      data.get("abuseConfidenceScore", 0),
+                    "total_reports":    data.get("totalReports", 0),
+                    "country_code":     data.get("countryCode", ""),
+                    "is_tor":           data.get("isTor", False),
+                    "last_reported_at": data.get("lastReportedAt", ""),
+                }
+    except Exception:
+        pass
+    return {}
+
+
 def predict(data: TrafficInput, models: dict) -> PredictionResult:
     """
     Pipeline d'inférence complet :
     1. Whitelist check
     2. XGBoost binaire + multi-classes
-    3. River deuxième opinion (si disponible et confiance suffisante)
-    4. Fusion XGBoost + River → décision finale
+    3. Isolation Forest (détection zero-day)
+    4. River deuxième opinion (si disponible)
+    5. AbuseIPDB enrichissement réputation IP
+    6. Fusion → décision finale
     """
     xgb_binary    = models["xgb_binary"]
     xgb_multi     = models["xgb_multi"]
@@ -154,6 +218,8 @@ def predict(data: TrafficInput, models: dict) -> PredictionResult:
             severity          = "LOW",
             alert_status      = "Ignorée",
             timestamp         = datetime.now(),
+            anomaly_score     = 0.0,
+            if_triggered      = False,
         )
 
     # ── 2. XGBoost ───────────────────────────────────────────────────
@@ -179,8 +245,24 @@ def predict(data: TrafficInput, models: dict) -> PredictionResult:
         attack_type  = "Normal"
         binary_label = "Normal"
 
-    # ── 3. River deuxième opinion ─────────────────────────────────────
-    river_used = False
+    # ── 3. Isolation Forest (zero-day) ───────────────────────────────
+    if_result  = get_isolation_forest_result(X, models)
+    if_triggered = False
+
+    if if_result["if_available"] and if_result["is_anomaly"]:
+        # XGBoost dit Normal mais IF détecte une anomalie → potentiel zero-day
+        if not is_attack:
+            is_attack    = True
+            attack_type  = "Anomalie"
+            binary_label = "Attaque"
+            # Confiance estimée depuis le score IF (normalisée entre 0.5 et 0.9)
+            normalized   = min(0.9, 0.5 + abs(if_result["anomaly_score"] + IF_SCORE_THRESHOLD) * 0.8)
+            attack_conf  = round(normalized, 4)
+            binary_proba = attack_conf
+            if_triggered = True
+
+    # ── 4. River deuxième opinion ─────────────────────────────────────
+    river_used  = False
     river_class = None
 
     features_dict = {
@@ -205,7 +287,6 @@ def predict(data: TrafficInput, models: dict) -> PredictionResult:
 
     if river_pred and river_pred['confidence'] >= RIVER_OVERRIDE_THRESHOLD:
         river_class = river_pred['class']
-        # River override : si XGBoost dit Normal mais River dit Attaque avec forte confiance
         if not is_attack and river_class != 'Normal':
             is_attack    = True
             attack_type  = river_class
@@ -213,14 +294,24 @@ def predict(data: TrafficInput, models: dict) -> PredictionResult:
             binary_label = "Attaque"
             binary_proba = max(binary_proba, river_pred['confidence'])
             river_used   = True
-        # River confirme XGBoost avec plus de précision sur le type
         elif is_attack and river_class != 'Normal' and river_class != attack_type:
             if river_pred['confidence'] > attack_conf:
                 attack_type = river_class
                 attack_conf = river_pred['confidence']
                 river_used  = True
 
-    # ── 4. Sévérité et statut ─────────────────────────────────────────
+    # ── 5. AbuseIPDB enrichissement ──────────────────────────────────
+    abuse_info = check_abuseipdb(src_ip)
+    if abuse_info and abuse_info.get("abuse_score", 0) >= ABUSEIPDB_THRESHOLD:
+        # IP connue malveillante → forcer l'alerte même si tout le reste dit Normal
+        if not is_attack:
+            is_attack    = True
+            attack_type  = attack_type if attack_type != "Normal" else "Probe"
+            binary_label = "Attaque"
+            binary_proba = max(binary_proba, abuse_info["abuse_score"] / 100)
+            attack_conf  = binary_proba
+
+    # ── 6. Sévérité et statut ─────────────────────────────────────────
     severity     = SEVERITY_MAP.get(attack_type, "MEDIUM")
     alert_status = get_alert_status(is_attack, binary_proba, src_ip)
 
@@ -235,4 +326,10 @@ def predict(data: TrafficInput, models: dict) -> PredictionResult:
         timestamp         = datetime.now(),
         river_used        = river_used,
         river_class       = river_class,
+        # ── Nouveaux champs ──────────────────────────────────────────
+        anomaly_score     = if_result.get("anomaly_score", 0.0),
+        if_triggered      = if_triggered,
+        abuse_score       = abuse_info.get("abuse_score", None),
+        abuse_country     = abuse_info.get("country_code", None),
+        is_tor            = abuse_info.get("is_tor", None),
     )

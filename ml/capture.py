@@ -1,26 +1,33 @@
 """
-Mylo — Capture trafic réel (WiFi)
+Mylo — Capture trafic réel (multi-OS + DPI partiel)
 Capture → Features → XGBoost prédit → River apprend → Django sauvegarde
 
-Les credentials sont lus depuis D:/MYLO/.env.capture
+Supporte Windows (Npcap) et Linux (root/cap_net_raw).
+Les credentials sont lus depuis .env.capture
 Ce fichier est créé automatiquement par Mylo au premier login admin.
 """
 import time
 import requests
 import threading
 import os
+import sys
+import platform
 from collections import defaultdict
-from scapy.all import sniff, IP, TCP, UDP, ICMP
+from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw, DNS, DNSQR
 from pathlib import Path
+
+# ─── DÉTECTION OS ─────────────────────────────────────────────────────
+IS_WINDOWS = platform.system() == "Windows"
+IS_LINUX   = platform.system() == "Linux"
 
 # ─── CONFIG ───────────────────────────────────────────────────────────
 BASE_DIR   = Path(__file__).resolve().parent.parent
 ENV_FILE   = BASE_DIR / ".env.capture"
 
-DJANGO_URL = os.environ.get("MYLO_DJANGO_URL", "http://localhost:8001")
+DJANGO_URL     = os.environ.get("MYLO_DJANGO_URL", "http://localhost:8001")
 _ifaces_raw    = os.environ.get("CAPTURE_IFACE", "enp0s3")
 CAPTURE_IFACES = [i.strip() for i in _ifaces_raw.split(",")]
-WINDOW_SEC = 2
+WINDOW_SEC     = 2
 RIVER_AUTO_LEARN_THRESHOLD = 0.70
 
 AUTH_TOKEN = None
@@ -29,6 +36,15 @@ AUTH_USER  = None
 PROTO_MAP = {'TCP': 2, 'UDP': 1, 'ICMP': 0, 'OTHER': 2}
 FLAG_MAP  = {'S': 2, 'SA': 4, 'A': 10, 'FA': 6, 'R': 8, 'PA': 24}
 
+# ─── Ports applicatifs connus (DPI) ───────────────────────────────────
+HTTP_PORTS  = {80, 8080, 8000, 8001, 8443}
+HTTPS_PORTS = {443, 8443}
+DNS_PORTS   = {53}
+SSH_PORTS   = {22}
+FTP_PORTS   = {20, 21}
+SMTP_PORTS  = {25, 465, 587}
+DB_PORTS    = {3306, 5432, 1433, 27017, 6379}
+
 flows = defaultdict(lambda: {
     'src_bytes': 0, 'dst_bytes': 0, 'count': 0,
     'srv_count': 0, 'duration': 0, 'flags': [],
@@ -36,13 +52,96 @@ flows = defaultdict(lambda: {
     'src_ip': '', 'dst_ip': '',
     'src_port': 0, 'dst_port': 0,
     'serror_count': 0, 'rerror_count': 0,
+    # ── DPI features ──────────────────────────────────────────────────
+    'payload_sizes': [],        # tailles des payloads TCP/UDP
+    'app_protocol': 'UNKNOWN',  # HTTP, HTTPS, SSH, DNS, FTP, SMTP, DB, OTHER
+    'has_payload': False,        # au moins un paquet avec données
+    'dns_queries': [],           # noms de domaines demandés
+    'tcp_syn_count': 0,          # nombre de SYN (scan détection)
+    'tcp_rst_count': 0,          # nombre de RST
+    'small_packet_count': 0,     # paquets < 60 octets (scan)
+    'large_packet_count': 0,     # paquets > 1400 octets (exfiltration)
+    'unique_dst_ports': set(),   # ports de destination distincts
+    'inter_arrival_times': [],   # temps entre paquets (détection bursts)
+    'last_pkt_time': None,
 })
 lock  = threading.Lock()
-stats = {'captured': 0, 'sent': 0, 'attacks': 0, 'river_learned': 0, 'river_skipped': 0}
+stats = {
+    'captured': 0, 'sent': 0, 'attacks': 0,
+    'river_learned': 0, 'river_skipped': 0,
+    'dpi_http': 0, 'dpi_ssh': 0, 'dpi_dns': 0,
+}
+
+
+def detect_app_protocol(src_port: int, dst_port: int) -> str:
+    """Détecte le protocole applicatif depuis les ports."""
+    ports = {src_port, dst_port}
+    if ports & HTTPS_PORTS:  return 'HTTPS'
+    if ports & HTTP_PORTS:   return 'HTTP'
+    if ports & SSH_PORTS:    return 'SSH'
+    if ports & DNS_PORTS:    return 'DNS'
+    if ports & FTP_PORTS:    return 'FTP'
+    if ports & SMTP_PORTS:   return 'SMTP'
+    if ports & DB_PORTS:     return 'DATABASE'
+    return 'OTHER'
+
+
+def resolve_windows_interfaces():
+    """
+    Sur Windows, CAPTURE_IFACE peut contenir des noms lisibles (Wi-Fi, Ethernet)
+    ou des GUIDs. Scapy sur Windows attend les GUIDs NPF.
+    On tente de résoudre automatiquement.
+    """
+    if not IS_WINDOWS:
+        return CAPTURE_IFACES
+
+    try:
+        from scapy.arch.windows import get_windows_if_list
+        win_ifaces = get_windows_if_list()
+
+        resolved = []
+        for iface_name in CAPTURE_IFACES:
+            matched = False
+            for wi in win_ifaces:
+                # Correspondance sur le nom, description ou GUID
+                if (iface_name.lower() in wi.get('name', '').lower() or
+                    iface_name.lower() in wi.get('description', '').lower() or
+                    iface_name in wi.get('guid', '')):
+                    resolved.append(wi['name'])
+                    matched = True
+                    break
+            if not matched:
+                # Garder tel quel (peut-être déjà un GUID)
+                resolved.append(iface_name)
+
+        if resolved:
+            print(f"  [Windows] Interfaces résolues : {resolved}")
+            return resolved
+    except Exception as e:
+        print(f"  ⚠  Résolution interfaces Windows échouée: {e}")
+
+    return CAPTURE_IFACES
+
+
+def check_privileges():
+    """Vérifie les droits nécessaires selon l'OS."""
+    if IS_LINUX:
+        if os.geteuid() != 0:
+            print("  ✗ Linux : la capture réseau nécessite les droits root.")
+            print("    Lance avec : sudo python ml/capture.py")
+            print("    Ou via Docker avec cap_add: [NET_ADMIN, NET_RAW]")
+            sys.exit(1)
+    elif IS_WINDOWS:
+        try:
+            import ctypes
+            if not ctypes.windll.shell32.IsUserAnAdmin():
+                print("  ⚠  Windows : lance PowerShell en Administrateur pour capturer.")
+                print("    Npcap doit être installé : https://npcap.com/")
+        except Exception:
+            pass
 
 
 def read_env_capture():
-    """Lit les credentials depuis .env.capture"""
     env = {}
     if ENV_FILE.exists():
         for line in ENV_FILE.read_text(encoding='utf-8').splitlines():
@@ -56,18 +155,12 @@ def read_env_capture():
 def get_token():
     global AUTH_TOKEN, AUTH_USER
     env = read_env_capture()
-
     username = env.get('CAPTURE_USERNAME')
     password = env.get('CAPTURE_PASSWORD')
-
     if not username or not password:
         print(f"  ⚠  Credentials manquants dans {ENV_FILE}")
         print(f"  💡 Connecte-toi à Mylo — les credentials seront sauvegardés automatiquement.")
-        print(f"  💡 Ou crée manuellement {ENV_FILE} avec :")
-        print(f"     CAPTURE_USERNAME=ton_username")
-        print(f"     CAPTURE_PASSWORD=ton_password")
         return
-
     try:
         r = requests.post(f'{DJANGO_URL}/api/auth/login/', json={
             'username': username, 'password': password
@@ -78,7 +171,7 @@ def get_token():
             org = r.json().get('user', {}).get('organisation', {}).get('name', '?')
             print(f"  ✓ Auth Django OK — {username} ({org})")
         else:
-            print(f"  ✗ Auth échouée ({r.status_code}) — vérifie {ENV_FILE}")
+            print(f"  ✗ Auth échouée ({r.status_code})")
     except Exception as e:
         print(f"  ✗ Auth Django échouée: {e}")
 
@@ -90,39 +183,95 @@ def get_headers():
 def packet_to_flow(pkt):
     if not pkt.haslayer(IP):
         return
+
     ip  = pkt[IP]
     key = f"{ip.src}→{ip.dst}"
+    pkt_len = len(pkt)
+    now = time.time()
+
     with lock:
         flow = flows[key]
         flow['src_ip']    = ip.src
         flow['dst_ip']    = ip.dst
-        flow['src_bytes'] += len(pkt)
+        flow['src_bytes'] += pkt_len
         flow['count']     += 1
+
+        # ── Inter-arrival time ────────────────────────────────────────
+        if flow['last_pkt_time'] is not None:
+            iat = now - flow['last_pkt_time']
+            flow['inter_arrival_times'].append(iat)
+        flow['last_pkt_time'] = now
+
+        # ── Taille paquets ────────────────────────────────────────────
+        if pkt_len < 60:
+            flow['small_packet_count'] += 1
+        elif pkt_len > 1400:
+            flow['large_packet_count'] += 1
+
         if pkt.haslayer(TCP):
             flow['protocol'] = 'TCP'
-            flags = str(pkt[TCP].flags)
+            tcp = pkt[TCP]
+            flags = str(tcp.flags)
             flow['flags'].append(flags)
             flow['srv_count'] += 1
+
             if flow['src_port'] == 0:
-                flow['src_port'] = pkt[TCP].sport
-                flow['dst_port'] = pkt[TCP].dport
+                flow['src_port'] = tcp.sport
+                flow['dst_port'] = tcp.dport
+                flow['app_protocol'] = detect_app_protocol(tcp.sport, tcp.dport)
+
+            flow['unique_dst_ports'].add(tcp.dport)
+
             if 'S' in flags and 'A' not in flags:
                 flow['serror_count'] += 1
+                flow['tcp_syn_count'] += 1
             if 'R' in flags:
                 flow['rerror_count'] += 1
+                flow['tcp_rst_count'] += 1
+
+            # ── Payload TCP ───────────────────────────────────────────
+            if pkt.haslayer(Raw):
+                raw_data = pkt[Raw].load
+                payload_size = len(raw_data)
+                flow['payload_sizes'].append(payload_size)
+                flow['has_payload'] = True
+
         elif pkt.haslayer(UDP):
             flow['protocol'] = 'UDP'
+            udp = pkt[UDP]
             flow['srv_count'] += 1
+
             if flow['src_port'] == 0:
-                flow['src_port'] = pkt[UDP].sport
-                flow['dst_port'] = pkt[UDP].dport
+                flow['src_port'] = udp.sport
+                flow['dst_port'] = udp.dport
+                flow['app_protocol'] = detect_app_protocol(udp.sport, udp.dport)
+
+            flow['unique_dst_ports'].add(udp.dport)
+
+            # ── DNS query extraction ──────────────────────────────────
+            if pkt.haslayer(DNS) and pkt.haslayer(DNSQR):
+                try:
+                    qname = pkt[DNSQR].qname.decode('utf-8', errors='ignore').rstrip('.')
+                    if qname:
+                        flow['dns_queries'].append(qname)
+                        flow['app_protocol'] = 'DNS'
+                except Exception:
+                    pass
+
+            if pkt.haslayer(Raw):
+                flow['payload_sizes'].append(len(pkt[Raw].load))
+                flow['has_payload'] = True
+
         elif pkt.haslayer(ICMP):
             flow['protocol'] = 'ICMP'
-        flow['duration'] = time.time() - flow['start_time']
+
+        flow['duration'] = now - flow['start_time']
+
     stats['captured'] += 1
 
 
 def flow_to_features(flow):
+    """Convertit un flow en features + enrichit avec DPI."""
     count     = max(flow['count'], 1)
     srv_count = max(flow['srv_count'], 1)
     src_bytes = flow['src_bytes']
@@ -133,7 +282,60 @@ def flow_to_features(flow):
     flags     = flow['flags']
     flag_code = FLAG_MAP.get(max(set(flags), key=flags.count), 10) if flags else 10
 
-    return {
+    # ── Features DPI ──────────────────────────────────────────────────
+    payload_sizes = flow['payload_sizes']
+    avg_payload   = sum(payload_sizes) / len(payload_sizes) if payload_sizes else 0
+    max_payload   = max(payload_sizes) if payload_sizes else 0
+    unique_ports  = len(flow['unique_dst_ports'])
+
+    iats = flow['inter_arrival_times']
+    avg_iat = sum(iats) / len(iats) if iats else 0
+
+    # Score de suspicion DPI (0.0 → 1.0)
+    dpi_suspicion = 0.0
+    dpi_reasons   = []
+
+    # Scan de ports : beaucoup de ports distincts en peu de paquets
+    if unique_ports > 10 and count < 50:
+        dpi_suspicion += 0.3
+        dpi_reasons.append(f"port_scan({unique_ports} ports)")
+
+    # SYN flood : beaucoup de SYN sans ACK
+    syn_ratio = flow['tcp_syn_count'] / count if count > 0 else 0
+    if syn_ratio > 0.8 and count > 20:
+        dpi_suspicion += 0.4
+        dpi_reasons.append(f"syn_flood(ratio={syn_ratio:.2f})")
+
+    # Paquets minuscules en masse (Nmap, scanning)
+    small_ratio = flow['small_packet_count'] / count
+    if small_ratio > 0.7 and count > 10:
+        dpi_suspicion += 0.2
+        dpi_reasons.append(f"small_pkts({small_ratio:.2f})")
+
+    # Gros volumes sortants (exfiltration potentielle)
+    if src_bytes > 5_000_000 and avg_payload > 800:
+        dpi_suspicion += 0.3
+        dpi_reasons.append(f"large_transfer({src_bytes//1024}KB)")
+
+    # Bursts (trafic très irrégulier = DDoS)
+    if len(iats) > 5:
+        import statistics
+        try:
+            iat_stdev = statistics.stdev(iats)
+            if iat_stdev > 1.0 and count > 30:
+                dpi_suspicion += 0.2
+                dpi_reasons.append(f"burst(stdev={iat_stdev:.2f})")
+        except Exception:
+            pass
+
+    dpi_suspicion = min(dpi_suspicion, 1.0)
+
+    # Mise à jour stats DPI
+    if flow['app_protocol'] == 'HTTP':  stats['dpi_http'] += 1
+    if flow['app_protocol'] == 'SSH':   stats['dpi_ssh'] += 1
+    if flow['app_protocol'] == 'DNS':   stats['dpi_dns'] += 1
+
+    features = {
         'src_bytes':                    src_bytes,
         'dst_bytes':                    dst_bytes,
         'same_srv_rate':                srv_count / count,
@@ -157,14 +359,30 @@ def flow_to_features(flow):
         'bytes_ratio':                  src_bytes / (dst_bytes + 1),
         'bytes_per_packet':             src_bytes / count,
         'serror_diff':                  serror_r - rerror_r,
+        # ── DPI enrichissement (envoyé à Django pour log) ─────────────
+        '_dpi_app_protocol':    flow['app_protocol'],
+        '_dpi_suspicion':       round(dpi_suspicion, 3),
+        '_dpi_reasons':         ', '.join(dpi_reasons) if dpi_reasons else '',
+        '_dpi_unique_ports':    unique_ports,
+        '_dpi_avg_payload':     round(avg_payload, 1),
+        '_dpi_max_payload':     max_payload,
+        '_dpi_syn_ratio':       round(syn_ratio, 3),
+        '_dpi_small_ratio':     round(small_ratio, 3),
+        '_dpi_avg_iat':         round(avg_iat, 4),
+        '_dpi_dns_queries':     flow['dns_queries'][:5],  # max 5
+        '_dpi_has_payload':     flow['has_payload'],
     }
+
+    return features
 
 
 def river_learn(features: dict, true_label: str):
+    # Exclure les champs DPI du payload River
+    clean = {k: v for k, v in features.items() if not k.startswith('_dpi')}
     try:
         r = requests.post(
             f'{DJANGO_URL}/api/actions/river/learn/',
-            json={'features': features, 'true_label': true_label},
+            json={'features': clean, 'true_label': true_label},
             headers=get_headers(),
             timeout=3
         )
@@ -195,33 +413,39 @@ def send_flows():
             get_token()
             continue
 
-        # ── NOUVEAU : récupérer la phase baseline ─────────────────────
         try:
             phase_resp = requests.get(
                 f'{DJANGO_URL}/api/alerts/baseline/phase/',
-                headers=get_headers(),
-                timeout=3
+                headers=get_headers(), timeout=3
             )
-            phase_data   = phase_resp.json() if phase_resp.ok else {}
-            phase_actuelle = phase_data.get('phase', 'production')
+            phase_data        = phase_resp.json() if phase_resp.ok else {}
+            phase_actuelle    = phase_data.get('phase', 'production')
             river_learn_threshold = phase_data.get('river_threshold', RIVER_AUTO_LEARN_THRESHOLD)
         except Exception:
-            phase_actuelle        = 'production'  # fallback sécurisé
+            phase_actuelle        = 'production'
             river_learn_threshold = RIVER_AUTO_LEARN_THRESHOLD
-        # ─────────────────────────────────────────────────────────────
 
         for key, flow in current_flows.items():
             if flow['count'] < 2:
                 continue
 
             features = flow_to_features(flow)
-            payload  = {
-                **features,
+
+            # Payload envoyé à Django (sans les champs DPI internes)
+            clean_features = {k: v for k, v in features.items() if not k.startswith('_dpi')}
+            payload = {
+                **clean_features,
                 'src_ip':   flow['src_ip'],
                 'dst_ip':   flow['dst_ip'],
                 'src_port': flow['src_port'],
                 'dst_port': flow['dst_port'],
                 'protocol': flow['protocol'],
+                # DPI metadata pour enrichissement Django
+                'dpi_app_protocol': features.get('_dpi_app_protocol', 'UNKNOWN'),
+                'dpi_suspicion':    features.get('_dpi_suspicion', 0.0),
+                'dpi_reasons':      features.get('_dpi_reasons', ''),
+                'dpi_unique_ports': features.get('_dpi_unique_ports', 0),
+                'dpi_dns_queries':  features.get('_dpi_dns_queries', []),
             }
 
             try:
@@ -242,50 +466,59 @@ def send_flows():
                 attack_type  = result.get('attack_type', 'Normal')
                 confidence   = result.get('binary_confidence', 0)
                 alert_status = result.get('alert_status', 'Nouvelle')
+                if_triggered = result.get('if_triggered', False)
+                dpi_susp     = features.get('_dpi_suspicion', 0.0)
+                dpi_reasons  = features.get('_dpi_reasons', '')
+                app_proto    = features.get('_dpi_app_protocol', '')
                 stats['sent'] += 1
 
                 src_port = flow['src_port']
                 dst_port = flow['dst_port']
 
+                # ── DPI override : suspicion élevée même si ML dit Normal
+                if not is_attack and dpi_susp >= 0.5:
+                    is_attack   = True
+                    attack_type = "Anomalie"
+                    alert_status = "À vérifier"
+                    print(f"  🔍 DPI [{app_proto:8s}] suspicion={dpi_susp:.2f} "
+                          f"{flow['src_ip']}:{src_port} → {flow['dst_ip']}:{dst_port} "
+                          f"[{dpi_reasons}]")
+
                 if is_attack:
                     stats['attacks'] += 1
-                    print(f"  🚨 {attack_type:12s} [{result.get('severity'):8s}] "
+                    if_tag = " [IF🎯]" if if_triggered else ""
+                    print(f"  🚨 {attack_type:12s} [{result.get('severity', 'HIGH'):8s}]{if_tag} "
                           f"{flow['src_ip']:15s}:{src_port:<5} → "
                           f"{flow['dst_ip']:15s}:{dst_port:<5} "
-                          f"conf:{confidence:.2f} [{alert_status}]")
+                          f"conf:{confidence:.2f} [{alert_status}] "
+                          f"app:{app_proto}")
                 else:
                     print(f"  ✓  Normal        [LOW     ] "
                           f"{flow['src_ip']:15s}:{src_port:<5} → "
-                          f"{flow['dst_ip']:15s}:{dst_port:<5}")
+                          f"{flow['dst_ip']:15s}:{dst_port:<5} "
+                          f"app:{app_proto}")
 
-                # ── NOUVEAU : River gated par phase baseline ──────────
+                # ── River gated par phase ─────────────────────────────
                 river_doit_apprendre = False
-
                 if phase_actuelle == 'learning':
-                    # En apprentissage : River apprend SEULEMENT le trafic Normal
                     if not is_attack:
                         river_doit_apprendre = True
                         print(f"  📚 River [LEARNING] apprend trafic Normal")
                     else:
-                        print(f"  📚 River [LEARNING] skip attaque — baseline en cours")
-
+                        print(f"  📚 River [LEARNING] skip attaque")
                 elif phase_actuelle == 'validation':
-                    # En validation : River n'apprend rien
                     print(f"  ⏳ River [VALIDATION] en attente admin")
-
                 elif phase_actuelle == 'production':
-                    # En production : comportement normal avec seuil de confiance
                     if confidence >= river_learn_threshold:
                         river_doit_apprendre = True
                     else:
                         stats['river_skipped'] += 1
                         if is_attack:
-                            print(f"  ⏸  River skip (conf {confidence:.2f}) → 'À vérifier'")
+                            print(f"  ⏸  River skip (conf {confidence:.2f})")
 
                 if river_doit_apprendre:
                     true_label = attack_type if is_attack else 'Normal'
                     river_learn(features, true_label)
-                # ─────────────────────────────────────────────────────
 
             except requests.exceptions.ConnectionError:
                 print("  ✗ Django/FastAPI non disponible")
@@ -299,26 +532,48 @@ def print_stats():
         print(f"\n  📊 Capturés:{stats['captured']} | Envoyés:{stats['sent']} | "
               f"Attaques:{stats['attacks']} | "
               f"River appris:{stats['river_learned']} | "
-              f"À vérifier:{stats['river_skipped']}\n")
+              f"À vérifier:{stats['river_skipped']} | "
+              f"DPI HTTP:{stats['dpi_http']} SSH:{stats['dpi_ssh']} DNS:{stats['dpi_dns']}\n")
 
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("  Mylo IPS — Capture + River Online Learning")
+    print("  Mylo IPS — Capture + DPI + River Online Learning")
+    print(f"  OS détecté : {platform.system()}")
     print("=" * 60)
+
+    check_privileges()
+
+    # Résolution interfaces selon OS
+    active_ifaces = resolve_windows_interfaces()
 
     get_token()
     threading.Thread(target=send_flows, daemon=True).start()
     threading.Thread(target=print_stats, daemon=True).start()
 
-    print(f"  Interfaces : {', '.join(CAPTURE_IFACES)}")
+    print(f"  Interfaces : {', '.join(active_ifaces)}")
     print(f"  Fenêtre    : {WINDOW_SEC}s")
     print(f"  River seuil: confiance ≥ {RIVER_AUTO_LEARN_THRESHOLD}")
-    print(f"\n  ✓  Normal | 🚨 Attaque | 🧠 River apprend | ⏸ River skip\n")
+    print(f"  DPI        : port scan, SYN flood, exfiltration, bursts, DNS")
+    print(f"\n  ✓ Normal | 🚨 Attaque | 🔍 DPI | 🎯 IF zero-day | 🧠 River\n")
+
+    if IS_WINDOWS:
+        print("  ⚠  Windows : assure-toi que Npcap est installé (https://npcap.com/)")
+        print("  ⚠  Lance PowerShell en Administrateur\n")
 
     try:
-        sniff(iface=CAPTURE_IFACES, prn=packet_to_flow, store=False, filter="ip")
-    except KeyboardInterrupt:
+        sniff(iface=active_ifaces, prn=packet_to_flow, store=False, filter="ip")
+    except PermissionError:
+        print("\n  ✗ Permission refusée.")
+        if IS_LINUX:
+            print("    Lance avec : sudo python ml/capture.py")
+        else:
+            print("    Lance PowerShell en Administrateur")
+    except Exception as e:
+        print(f"\n  ✗ Erreur sniff: {e}")
+        if IS_WINDOWS:
+            print("    Installe Npcap : https://npcap.com/")
+    finally:
         print(f"\n  Arrêt — Capturés:{stats['captured']} | "
               f"River appris:{stats['river_learned']} | "
               f"À vérifier:{stats['river_skipped']}")

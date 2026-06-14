@@ -71,8 +71,14 @@ class PredictionResult(BaseModel):
     severity:          str
     alert_status:      str
     timestamp:         datetime
-    river_used:        Optional[bool]  = False   # ← nouveau
-    river_class:       Optional[str]   = None    # ← nouveau
+    river_used:        Optional[bool]  = False
+    river_class:       Optional[str]   = None
+    
+    anomaly_score: float = 0.0
+    if_triggered:  bool  = False
+    abuse_score:   int | None = None
+    abuse_country: str | None = None
+    is_tor:        bool | None = None
 
 
 # ─── ITEMS LISTE ──────────────────────────────────────────────────────
