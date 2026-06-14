@@ -148,7 +148,7 @@ TELEGRAM_CHAT_ID=your_chat_id
 - ✅ Notifications Telegram
 - ✅ Rapports PDF planifiés
 - ✅ Copilot SOC (LLaMA 3.3 70B via Groq)
-- ⚠️ Double authentification TOTP (2FA)
+- ✅ Double authentification TOTP (2FA)
 - ✅ RBAC multi-tenant
 - ✅ Audit Log
 - ✅ Online Learning avec River
