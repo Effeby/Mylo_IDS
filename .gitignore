@@ -29,6 +29,7 @@ ml/outputs/
 *.csv
 KDDTrain+.txt
 KDDTest+.txt
+ml/capture_backup.py
 
 # ─── Node / React ─────────────────────────────────────────────────────────────
 node_modules/
@@ -50,3 +51,4 @@ Thumbs.db
 .env
 *.env
 secrets.json
+.env.capture

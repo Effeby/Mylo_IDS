@@ -3,6 +3,7 @@ ml/cici_ds2017/
 ml/data/
 ml/outputs/
 ml/KDD*.txt
+ml/capture_backup.py
 venv/
 **/__pycache__/
 **/*.pyc
