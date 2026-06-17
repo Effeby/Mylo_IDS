@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom'
+
 import { useState, useRef, useEffect } from 'react'
 import { ChevronUp } from 'lucide-react'
 import Sidebar from './components/Sidebar'
@@ -18,9 +19,11 @@ import Correlation from './pages/Correlation'
 import SetupTOTP from './pages/SetupTOTP'
 import VerifyTOTP from './pages/VerifyTOTP'
 import ChangePassword from './pages/ChangePassword'
-
+import NotFound from './pages/NotFound'
 
 const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+
+
 
 // ─── Son d'alerte global ──────────────────────────────────────────────────────
 function playAlertSound(severity = 'HIGH') {
@@ -108,7 +111,7 @@ function OnboardingGuard({ children }) {
 
   useEffect(() => {
     // Ne pas rediriger si déjà sur ces pages publiques
-    if (['/onboarding', '/', '/register'].includes(location.pathname)) return
+    if (['/onboarding', '/', '/register', '/totp-setup', '/totp-verify', '/password-change', '/404'].includes(location.pathname)) return
 
     const token = localStorage.getItem('mylo_access')
     if (!token) return
@@ -124,15 +127,48 @@ function OnboardingGuard({ children }) {
   return children
 }
 
+// ─── Guard auth (anti-retour après logout) ────────────────────────────────
+function AuthGuard() {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    const publicPaths = new Set([
+      '/',
+      '/register',
+      '/onboarding',
+      '/totp-setup',
+      '/totp-verify',
+      '/password-change',
+      '/404',
+    ])
+
+
+
+    if (publicPaths.has(location.pathname)) return
+
+    const token = localStorage.getItem('mylo_access')
+    if (token) return
+
+    // Evite de laisser l'historique navigateur ramener sur des routes privées après logout.
+    navigate('/', { replace: true })
+  }, [location.pathname, navigate])
+
+  return <Outlet />
+}
+
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 function Layout({ children }) {
+
   const [copilotOpen, setCopilotOpen]     = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const mainRef  = useRef(null)
   const location = useLocation()
 
   // Pages sans sidebar
-  const noSidebar = ['/', '/onboarding', '/register', '/totp-setup', '/totp-verify', '/password-change'].includes(location.pathname)
+  const noSidebar = ['/', '/onboarding', '/register', '/totp-setup', '/totp-verify', '/password-change', '/404'].includes(location.pathname)
+
 
   useGlobalAlertSound()
 
@@ -187,9 +223,9 @@ export default function App() {
         <Layout>
           <OnboardingGuard>
             <Routes>
-              <Route path="/"            element={<Login />} />
-              <Route path="/register"      element={<Register />} />
-              <Route path="/onboarding"  element={
+              <Route path="/"                element={<Login />} />
+              <Route path="/register"        element={<Register />} />
+              <Route path="/onboarding"      element={
                 <Onboarding
                   authToken={localStorage.getItem('mylo_access')}
                   onComplete={() => {
@@ -203,18 +239,24 @@ export default function App() {
                   }}
                 />
               } />
-              <Route path="/totp-setup" element={<SetupTOTP />} />
-              <Route path="/totp-verify" element={<VerifyTOTP />} />
+              <Route path="/totp-setup"       element={<SetupTOTP />} />
+              <Route path="/totp-verify"      element={<VerifyTOTP />} />
               <Route path="/password-change" element={<ChangePassword />} />
-              <Route path="/dashboard"   element={<Dashboard />} />
-              <Route path="/monitor"     element={<Monitor />} />
-              <Route path="/alerts"      element={<Alerts />} />
-              <Route path="/stats"       element={<Stats />} />
-              <Route path="/settings"    element={<Settings />} />
-              <Route path="/audit"        element={<AuditLog />} />
-              <Route path="/behavior" element={<Behavior />} />
-              <Route path="/correlation" element={<Correlation />} />
-              <Route path="*"            element={<Navigate to="/" />} />
+
+              <Route path="/404"             element={<NotFound />} />
+
+              <Route element={<AuthGuard />}>
+                <Route path="/dashboard"   element={<Dashboard />} />
+                <Route path="/monitor"     element={<Monitor />} />
+                <Route path="/alerts"      element={<Alerts />} />
+                <Route path="/stats"       element={<Stats />} />
+                <Route path="/settings"    element={<Settings />} />
+                <Route path="/audit"        element={<AuditLog />} />
+                <Route path="/behavior"     element={<Behavior />} />
+                <Route path="/correlation"  element={<Correlation />} />
+              </Route>
+
+              <Route path="*"            element={<NotFound />} />
             </Routes>
           </OnboardingGuard>
         </Layout>

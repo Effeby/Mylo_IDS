@@ -36,6 +36,7 @@ def serialize_user(user):
             'id':            user.organisation.id,
             'name':          user.organisation.name,
             'slug':          user.organisation.slug,
+            'email':         user.organisation.email,
             'plan':          user.organisation.plan,
             'sector':        user.organisation.sector,
             'is_setup_done': user.organisation.is_setup_done,
@@ -86,10 +87,14 @@ class RegisterView(APIView):
             slug = f"{base_slug}-{counter}"
             counter += 1
 
+        org_email = (d.get('org_email') or d.get('email', '')).strip()
+        if not org_email:
+            org_email = d.get('email', '').strip()
+
         org = Organisation.objects.create(
             name          = d['org_name'],
             slug          = slug,
-            email         = d.get('org_email', d['email']),
+            email         = org_email,
             sector        = d.get('sector', 'other'),
             plan          = 'free',
             is_setup_done = False,  # Wizard pas encore fait

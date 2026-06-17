@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell, RefreshCw, Filter, CheckCircle, XCircle, AlertTriangle, Calendar, X, RotateCcw } from 'lucide-react'
+import { Bell, RefreshCw, Filter, CheckCircle, XCircle, AlertTriangle, Calendar, X, RotateCcw, Shield } from 'lucide-react'
 import { getAlerts, updateAlertStatus, blockIP, getOrganisationName } from '../api/mylo'
 import AlertBadge from '../components/AlertBadge'
 
@@ -140,6 +140,7 @@ export default function Alerts() {
   const [filterType,      setFilterType]      = useState('')
   const [filterIP,        setFilterIP]        = useState('')
   const [filterStatus,    setFilterStatus]    = useState('')
+  const [filterSource,    setFilterSource]    = useState('')
   const [filterDateFrom,  setFilterDateFrom]  = useState('')
   const [filterDateTo,    setFilterDateTo]    = useState('')
   const [filterTimeFrom,  setFilterTimeFrom]  = useState('')
@@ -161,6 +162,7 @@ export default function Alerts() {
       if (filterType)             params.attack_type = filterType
       if (overrideIP || filterIP) params.ip          = overrideIP || filterIP
       if (filterStatus)           params.status      = filterStatus
+      if (filterSource)           params.source      = filterSource
       if (filterDateFrom)         params.date_from   = filterDateFrom
       if (filterDateTo)           params.date_to     = filterDateTo
       const data = await getAlerts(params)
@@ -169,7 +171,7 @@ export default function Alerts() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [filterType, filterStatus, filterDateFrom, filterDateTo])
+  useEffect(() => { load() }, [filterType, filterStatus, filterSource, filterDateFrom, filterDateTo])
 
   const filteredAlerts = alerts.filter(a => {
     const dt = new Date(a.detected_at)
@@ -184,13 +186,14 @@ export default function Alerts() {
 
   const resetFilters = () => {
     setFilterType(''); setFilterIP(''); setFilterStatus('')
+    setFilterSource('')
     setFilterDateFrom(''); setFilterDateTo('')
     setFilterTimeFrom(''); setFilterTimeTo('')
     window.history.replaceState({}, '', '/alerts')
   }
 
   const hasActiveFilters = filterType || filterIP || filterStatus ||
-    filterDateFrom || filterDateTo || filterTimeFrom || filterTimeTo
+    filterSource || filterDateFrom || filterDateTo || filterTimeFrom || filterTimeTo
 
   const handleBlock = async (ip) => {
     try { await blockIP(ip, 'Bloqué depuis la page alertes'); alert('Bloqué : ' + ip) }
@@ -274,6 +277,15 @@ export default function Alerts() {
           <option value="resolved">Résolues</option>
           <option value="false_positive">Faux positifs</option>
         </select>
+        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} style={{
+          padding:'8px 12px', borderRadius:8, background:'#0F1629',
+          border:`1px solid ${filterSource ? '#3B82F6' : '#1E2D4F'}`,
+          color: filterSource ? '#3B82F6' : '#F8FAFC', fontSize:13,
+        }}>
+          <option value="">Toutes sources</option>
+          <option value="scapy">Scapy (capture)</option>
+          <option value="wazuh">Wazuh (SIEM)</option>
+        </select>
         <input value={filterIP} onChange={e => setFilterIP(e.target.value)}
           placeholder="Filtrer par IP..." onKeyDown={e => e.key === 'Enter' && load()}
           style={{ padding:'8px 14px', borderRadius:8, background:'#0F1629', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:13, outline:'none', width:180 }} />
@@ -319,6 +331,7 @@ export default function Alerts() {
           {filterType     && <Chip label={`Type: ${filterType}`}      onRemove={() => setFilterType('')} />}
           {filterStatus   && <Chip label={`Statut: ${STATUS_DISPLAY[filterStatus]?.label || filterStatus}`} onRemove={() => setFilterStatus('')} />}
           {filterIP       && <Chip label={`IP: ${filterIP}`}          onRemove={() => setFilterIP('')} />}
+          {filterSource   && <Chip label={`Source: ${filterSource}`}  onRemove={() => setFilterSource('')} />}
           {filterDateFrom && <Chip label={`Depuis: ${filterDateFrom}`} onRemove={() => setFilterDateFrom('')} />}
           {filterDateTo   && <Chip label={`Au: ${filterDateTo}`}       onRemove={() => setFilterDateTo('')} />}
           {filterTimeFrom && <Chip label={`Heure ≥ ${filterTimeFrom}`} onRemove={() => setFilterTimeFrom('')} />}
@@ -361,7 +374,13 @@ export default function Alerts() {
                   <>{f.line1 && <div style={{ color:'#F8FAFC', fontWeight:500 }}>{f.line1}</div>}<div style={{ color:'#94A3B8' }}>{f.line2}</div></>
                 )})()}
               </span>
-              <span style={{ color:'#64748B', fontFamily:'monospace', fontSize:11 }}>{a.src_ip || '—'}</span>
+              <span style={{ color:'#64748B', fontFamily:'monospace', fontSize:11, display:'flex', alignItems:'center', gap:8 }}>
+                <span>{a.src_ip || '—'}</span>
+                <span style={{ fontSize:11, padding:'2px 6px', borderRadius:8, display:'inline-flex', alignItems:'center', gap:6, background: a.source === 'wazuh' ? 'rgba(124,58,237,0.12)' : 'rgba(99,102,241,0.08)', color: a.source === 'wazuh' ? '#7C3AED' : '#6366F1', border: '1px solid rgba(255,255,255,0.02)' }} title={a.source || 'scapy'}>
+                  {a.source === 'wazuh' ? <Shield size={12} color="#7C3AED" /> : <svg width="12" height="12" viewBox="0 0 8 8" style={{borderRadius:6, display:'block'}}><circle cx="4" cy="4" r="4" fill="#6366F1"/></svg>}
+                  <span style={{ lineHeight:1 }}>{a.source || 'scapy'}</span>
+                </span>
+              </span>
               <span style={{ color:'#F8FAFC', fontWeight:600 }}>{a.attack_type}</span>
               <AlertBadge severity={a.severity} />
               <span style={{ color:'#64748B', fontFamily:'monospace', fontSize:11 }}>

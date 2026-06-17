@@ -71,17 +71,20 @@ export default function Register() {
 
     setLoading(true)
     try {
-      const res = await fetch(`${DJANGO_URL}/api/auth/register/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          first_name: form.first_name,
-          last_name:  form.last_name,
-          username:   form.username,
-          email:      form.email,
-          password:   form.password,
-          org_name:   form.org_name,
-          org_email:  form.org_email || form.email,
+const userEmail = form.email.trim()
+        const orgEmail  = form.org_email.trim() || userEmail
+
+        const res = await fetch(`${DJANGO_URL}/api/auth/register/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: form.first_name,
+            last_name:  form.last_name,
+            username:   form.username,
+            email:      userEmail,
+            password:   form.password,
+            org_name:   form.org_name,
+            org_email:  orgEmail,
           sector:     form.sector,
         }),
       })

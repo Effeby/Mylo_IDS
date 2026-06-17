@@ -39,11 +39,24 @@ export default function Sidebar({ onCopilot }) {
         })
       }
     } catch(e) {}
+
+    // Désauth local
     localStorage.removeItem('mylo_access')
     localStorage.removeItem('mylo_refresh')
     localStorage.removeItem('mylo_user')
-    navigate('/')
+
+    // Empêche le bouton "Retour" de remonter sur des routes privées.
+    // On remplit l'historique avec une entrée vers '/'.
+    try {
+      window.history.pushState({}, '', '/')
+      window.history.replaceState({}, '', '/')
+      // Ajoute un second step pour limiter le retour immédiat.
+      window.history.pushState({}, '', '/')
+    } catch(e) {}
+
+    navigate('/', { replace: true })
   }
+
 
   const visibleNav = nav.filter(item => userLevel >= item.minLevel)
 

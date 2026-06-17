@@ -22,7 +22,7 @@ services:
       - redis_data:/data
 
   api:
-    image: dydybinks1/mylo-api:1.0.0
+    image: dydybinks1/mylo-api:1.1.0
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -40,7 +40,7 @@ services:
       - redis
 
   backend:
-    image: dydybinks1/mylo-backend:1.0.0
+    image: dydybinks1/mylo-backend:1.1.0
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -60,7 +60,7 @@ services:
       - api
 
   celery-worker:
-    image: dydybinks1/mylo-celery-worker:1.0.0
+    image: dydybinks1/mylo-celery-worker:1.1.0
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -78,7 +78,7 @@ services:
       - api
 
   celery-beat:
-    image: dydybinks1/mylo-celery-beat:1.0.0
+    image: dydybinks1/mylo-celery-beat:1.1.0
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -118,7 +118,7 @@ services:
       - api
 
   capture:
-    image: dydybinks1/mylo-capture:1.0.0
+    image: dydybinks1/mylo-capture:1.1.0
     build:
       context: .
       dockerfile: ml/Dockerfile

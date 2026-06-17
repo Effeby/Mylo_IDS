@@ -68,6 +68,8 @@ class Alert(models.Model):
  
     status       = models.CharField(max_length=20, choices=STATUSES, default='new')
     action_taken = models.CharField(max_length=100, blank=True)
+    # Source of the alert (e.g. 'scapy', 'wazuh') — helps identify origin
+    source = models.CharField(max_length=20, default='scapy')
  
     detected_at = models.DateTimeField(auto_now_add=True)
     updated_at  = models.DateTimeField(auto_now=True)

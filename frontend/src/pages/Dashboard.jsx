@@ -302,12 +302,16 @@ export default function Dashboard() {
                 width:8, height:8, borderRadius:'50%', flexShrink:0,
                 background: a.is_attack ? (COLORS[a.attack_type] || '#EF4444') : '#22C55E',
               }} />
-              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:12, fontWeight:600, color: a.is_attack ? '#F8FAFC' : '#64748B' }}>
                   {a.attack_type}
                   {a.src_ip && (
-                    <span style={{ fontFamily:'monospace', color:'#475569', fontWeight:400, marginLeft:8, fontSize:11 }}>
-                      {a.src_ip}
+                    <span style={{ display:'inline-flex', alignItems:'center', gap:8, marginLeft:8 }}>
+                      <span style={{ fontFamily:'monospace', color:'#475569', fontWeight:400, fontSize:11 }}>{a.src_ip}</span>
+                      <span style={{ fontSize:11, padding:'2px 6px', borderRadius:8, display:'inline-flex', alignItems:'center', gap:6, background: a.source === 'wazuh' ? 'rgba(124,58,237,0.12)' : 'rgba(99,102,241,0.08)', color: a.source === 'wazuh' ? '#7C3AED' : '#6366F1' }} title={a.source || 'scapy'}>
+                        {a.source === 'wazuh' ? <Shield size={12} color="#7C3AED" /> : <svg width="12" height="12" viewBox="0 0 8 8" style={{borderRadius:6, display:'block'}}><circle cx="4" cy="4" r="4" fill="#6366F1"/></svg>}
+                        <span style={{ lineHeight:1 }}>{a.source || 'scapy'}</span>
+                      </span>
                     </span>
                   )}
                 </div>

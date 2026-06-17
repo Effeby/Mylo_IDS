@@ -28,7 +28,9 @@ django.interceptors.response.use(
   res => res,
   async err => {
     const original = err.config
-    if (err.response?.status === 401 && !original._retry) {
+    const isAuthRequest = original.url?.includes('/api/auth/login/') || original.url?.includes('/api/auth/refresh/')
+
+    if (err.response?.status === 401 && !original._retry && !isAuthRequest) {
       original._retry = true
       try {
         const refresh = localStorage.getItem('mylo_refresh')

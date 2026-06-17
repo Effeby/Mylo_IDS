@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Activity, Wifi, AlertTriangle, CheckCircle, Search, Filter, Ban, X } from 'lucide-react'
+import { Activity, Wifi, AlertTriangle, CheckCircle, Search, Filter, Ban, X, Shield } from 'lucide-react'
 import { useMonitor } from '../context/MonitorContext'
 import AlertBadge from '../components/AlertBadge'
 import { blockIP, getOrganisationName } from '../api/mylo'
@@ -281,19 +281,23 @@ export default function Monitor() {
                 </div>
 
                 {/* IP Source */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {r.is_attack && (
                     <div style={{
                       width: 6, height: 6, borderRadius: '50%',
                       background: typeColor, flexShrink: 0,
                     }} />
                   )}
-                  <span style={{
-                    fontFamily: 'monospace', fontSize: 12,
-                    color: r.is_attack ? '#F8FAFC' : '#64748B',
-                  }}>
-                    {r.src_ip || '—'}
-                  </span>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{
+                      fontFamily: 'monospace', fontSize: 12,
+                      color: r.is_attack ? '#F8FAFC' : '#64748B',
+                    }}>{r.src_ip || '—'}</span>
+                    <span style={{ fontSize:11, padding:'2px 6px', borderRadius:8, display:'inline-flex', alignItems:'center', gap:6, background: r.source === 'wazuh' ? 'rgba(124,58,237,0.12)' : 'rgba(99,102,241,0.08)', color: r.source === 'wazuh' ? '#7C3AED' : '#6366F1' }} title={r.source || 'scapy'}>
+                      {r.source === 'wazuh' ? <Shield size={12} color="#7C3AED" /> : <svg width="12" height="12" viewBox="0 0 8 8" style={{borderRadius:6, display:'block'}}><circle cx="4" cy="4" r="4" fill="#6366F1"/></svg>}
+                      <span style={{ lineHeight:1 }}>{r.source || 'scapy'}</span>
+                    </span>
+                  </div>
                 </div>
 
                 {/* IP Destination */}

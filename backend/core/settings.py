@@ -110,6 +110,7 @@ INSTALLED_APPS = [
     'actions',
     'reports',
     'django_celery_beat',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -152,11 +153,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'mylo_db'),
-        'USER': os.environ.get('DB_USER', 'dydybinks'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'Kalinux@203'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+        'NAME': os.environ.get('DB_NAME', ''),
+        'USER': os.environ.get('DB_USER', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', ''),
+        'PORT': os.environ.get('DB_PORT', ''),
     }
 }
 

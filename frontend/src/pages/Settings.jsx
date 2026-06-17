@@ -738,7 +738,7 @@ export default function Settings() {
             </button>
           </div>
           <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>Plage ARP / CIDR (optionnel)</label>
+            <label style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>Plage ARP / CIDR</label>
             <input
               value={arpTarget}
               onChange={e => setArpTarget(e.target.value)}

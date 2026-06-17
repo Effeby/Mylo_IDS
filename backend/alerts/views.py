@@ -383,6 +383,7 @@ class AlertListView(APIView):
         attack_type   = request.query_params.get('type') or request.query_params.get('attack_type')
         severity      = request.query_params.get('severity')
         src_ip        = request.query_params.get('ip')
+        source        = request.query_params.get('source')
         status_filter = request.query_params.get('status')
         date_from     = request.query_params.get('date_from')
         date_to       = request.query_params.get('date_to')
@@ -391,6 +392,7 @@ class AlertListView(APIView):
         if attack_type:   qs = qs.filter(attack_type=attack_type)
         if severity:      qs = qs.filter(severity=severity)
         if src_ip:        qs = qs.filter(src_ip__icontains=src_ip)
+        if source:        qs = qs.filter(source=source)
         if status_filter: qs = qs.filter(status=status_filter)
         if date_from:     qs = qs.filter(detected_at__date__gte=date_from)
         if date_to:       qs = qs.filter(detected_at__date__lte=date_to)
@@ -557,6 +559,7 @@ class AnalyzeView(APIView):
                 'src_port': traffic_data.get('src_port', 0),
                 'dst_port': traffic_data.get('dst_port', 0),
             },
+            source = traffic_data.get('source', 'scapy'),
         )
 
         if prediction.get('is_attack') and severity in ('HIGH', 'CRITICAL', 'MEDIUM'):
@@ -950,6 +953,7 @@ def _serialize_alert(a):
         'features':          features,
         'status':            a.status,
         'action_taken':      a.action_taken,
+        'source':            a.source,
         'detected_at':       a.detected_at.isoformat(),
         'organisation':      a.organisation.name if a.organisation else None,
     }
@@ -1185,6 +1189,7 @@ def _create_behavioral_alert(org, src_ip, behavioral_result, flow_data):
             'anomaly_type':   main_anomaly.get('type', ''),
             'anomaly_detail': main_anomaly.get('detail', ''),
         },
+        source = flow_data.get('source', 'scapy'),
     )
 
     details = '\n'.join([f"  • {a['detail']}" for a in anomalies[:3]])

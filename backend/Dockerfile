@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --timeout=600 --retries=10 \
     -r /app/requirements.txt
+    
 
 # Copie du backend
 COPY backend/ /app/backend/
