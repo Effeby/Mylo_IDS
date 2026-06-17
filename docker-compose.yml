@@ -50,6 +50,7 @@ services:
     working_dir: /app/backend
     volumes:
       - ./backend:/app/backend
+      - ./.env.capture:/app/.env.capture
     ports:
       - "8001:8001"
     env_file:
@@ -96,7 +97,7 @@ services:
       - api
 
   frontend:
-    image: dydybinks1/mylo-frontend:1.0.0
+    image: dydybinks1/mylo-frontend:1.1.0
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -118,24 +119,23 @@ services:
       - api
 
   capture:
-      image: dydybinks1/mylo-capture:1.1.0
-      build:
-        context: .
-        dockerfile: ml/Dockerfile
-      container_name: mylo_capture
-      network_mode: host
-      cap_add:
-        - NET_ADMIN
-        - NET_RAW
-      environment:
-        - CAPTURE_IFACE=enp0s3,enp0s8,enp0s9
-        - MYLO_DJANGO_URL=http://localhost:8001
-      volumes:
-        - ./.env.capture:/app/.env.capture:ro
-        - ./ml/models:/app/ml/models:ro
-      depends_on:
-        - backend
-      restart: unless-stopped
+    image: dydybinks1/mylo-capture:1.1.0
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    container_name: mylo_capture
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - CAPTURE_IFACE=enp0s3,enp0s8,enp0s9
+      - MYLO_DJANGO_URL=http://mylo_backend:8001
+    volumes:
+      - ./.env.capture:/app/.env.capture:ro
+      - ./ml/models:/app/ml/models:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   postgres_data:

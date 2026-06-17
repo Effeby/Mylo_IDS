@@ -155,6 +155,15 @@ def read_env_capture():
 def get_token():
     global AUTH_TOKEN, AUTH_USER
     env = read_env_capture()
+
+    # Priorité : token JWT direct (généré après login TOTP)
+    capture_token = env.get('CAPTURE_TOKEN')
+    if capture_token:
+        AUTH_TOKEN = capture_token
+        print(f"  ✓ Auth via token JWT capture")
+        return
+
+    # Fallback : login classique (sans TOTP)
     username = env.get('CAPTURE_USERNAME')
     password = env.get('CAPTURE_PASSWORD')
     if not username or not password:

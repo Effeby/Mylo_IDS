@@ -110,7 +110,6 @@ INSTALLED_APPS = [
     'actions',
     'reports',
     'django_celery_beat',
-    'django_extensions',
 ]
 
 MIDDLEWARE = [

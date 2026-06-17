@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import status
+from rest_framework import request, status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.core.mail import send_mail
@@ -184,23 +184,17 @@ class LoginView(APIView):
                 from datetime import datetime
                 base_dir = Path(__file__).resolve().parent.parent.parent
                 env_file = base_dir / '.env.capture'
-
-                # Supprimer l'ancien fichier s'il existe
-                if env_file.exists():
-                    env_file.unlink()
-
-                # Recréer avec les nouvelles infos
-                env_file.write_text(
-                    f"# Généré automatiquement par Mylo IPS au login\n"
-                    f"# Ne pas partager ce fichier\n"
-                    f"CAPTURE_USERNAME={user.username}\n"
-                    f"CAPTURE_PASSWORD={request.data.get('password', '')}\n"
-                    f"CAPTURE_ORG={user.organisation.slug if user.organisation else 'default'}\n"
-                    f"CAPTURE_LOGIN_AT={datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    f"CAPTURE_LOGIN_IP={ip}\n"
-                    f"CAPTURE_DEVICE={request.META.get('HTTP_USER_AGENT', 'unknown')[:80]}\n",
-                    encoding='utf-8'
-                )
+                with open(env_file, 'w', encoding='utf-8') as f:
+                    f.write(
+                        f"# Généré automatiquement par Mylo IPS au login\n"
+                        f"# Ne pas partager ce fichier\n"
+                        f"CAPTURE_USERNAME={user.username}\n"
+                        f"CAPTURE_PASSWORD={request.data.get('password', '')}\n"
+                        f"CAPTURE_ORG={user.organisation.slug if user.organisation else 'default'}\n"
+                        f"CAPTURE_LOGIN_AT={datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                        f"CAPTURE_LOGIN_IP={ip}\n"
+                        f"CAPTURE_DEVICE={request.META.get('HTTP_USER_AGENT', 'unknown')[:80]}\n"
+                    )
             except Exception as e:
                 print(f"  ⚠ .env.capture non sauvegardé: {e}")
 
@@ -603,6 +597,21 @@ def totp_verify(request):
 
     if verify_totp_code(user.totp_secret, code):
         refresh = RefreshToken.for_user(user)
+        
+        # Sauvegarder le token JWT dans .env.capture pour capture.py
+        if user.habilitation_level >= 3:
+            try:
+                from pathlib import Path
+                base_dir = Path(__file__).resolve().parent.parent.parent
+                env_file = base_dir / '.env.capture'
+                with open(env_file, 'w', encoding='utf-8') as f:
+                    f.write(
+                        f"# Généré automatiquement par Mylo IPS au login TOTP\n"
+                        f"CAPTURE_TOKEN={str(refresh.access_token)}\n"
+                    )
+            except Exception as e:
+                print(f"  ⚠ Token capture non sauvegardé: {e}")
+
         return Response({
             "message": "Authentification réussie.",
             "totp_verified": True,
