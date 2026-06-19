@@ -491,29 +491,42 @@ class AnalyzeView(APIView):
         dst_ip = traffic_data.get('dst_ip') or random.choice(SIMULATED_DST_IPS)
 
         if WhitelistedIP.objects.filter(organisation=org, ip_address=src_ip).exists():
-            return Response({
-                'is_attack':         False,
-                'binary_label':      'Normal',
-                'binary_confidence': 0.0,
-                'attack_type':       'Normal',
-                'attack_confidence': 1.0,
-                'severity':          'LOW',
-                'alert_status':      'Ignorée',
-                'src_ip':            src_ip,
-                'dst_ip':            dst_ip,
-                'whitelisted':       True,
-            })
-
-        try:
-            payload = {**traffic_data, 'src_ip': src_ip, 'dst_ip': dst_ip}
-            resp = requests.post(
-                f"{settings.MYLO_FASTAPI_URL}/predict",
-                json=payload,
-                timeout=5
-            )
-            prediction = resp.json()
-        except Exception as e:
-            return Response({'error': f'FastAPI indisponible: {e}'}, status=503)
+            try:
+                payload = {**traffic_data, 'src_ip': src_ip, 'dst_ip': dst_ip}
+                resp = requests.post(
+                    f"{settings.MYLO_FASTAPI_URL}/predict",
+                    json=payload, timeout=5
+                )
+                prediction = resp.json()
+                confidence = prediction.get('binary_confidence', 0)
+                if confidence < 0.85:
+                    return Response({
+                        'is_attack': False, 'binary_label': 'Normal',
+                        'binary_confidence': 0.0, 'attack_type': 'Normal',
+                        'attack_confidence': 1.0, 'severity': 'LOW',
+                        'alert_status': 'Ignorée', 'src_ip': src_ip,
+                        'dst_ip': dst_ip, 'whitelisted': True,
+                    })
+                # confidence >= 0.85 → on laisse passer
+                # mais on saute le 2e appel FastAPI ci-dessous
+            except Exception:
+                return Response({
+                    'is_attack': False, 'binary_label': 'Normal',
+                    'binary_confidence': 0.0, 'attack_type': 'Normal',
+                    'attack_confidence': 1.0, 'severity': 'LOW',
+                    'alert_status': 'Ignorée', 'src_ip': src_ip,
+                    'dst_ip': dst_ip, 'whitelisted': True,
+                })
+        else:
+            try:
+                payload = {**traffic_data, 'src_ip': src_ip, 'dst_ip': dst_ip}
+                resp = requests.post(
+                    f"{settings.MYLO_FASTAPI_URL}/predict",
+                    json=payload, timeout=5
+                )
+                prediction = resp.json()
+            except Exception as e:
+                return Response({'error': f'FastAPI indisponible: {e}'}, status=503)
 
         asset = get_asset_for_ip(org, dst_ip) or get_asset_for_ip(org, src_ip)
         detection_score = compute_detection_score(prediction)
@@ -1758,3 +1771,20 @@ def baseline_phase(request):
         'river_threshold':  getattr(settings, 'river_learn_threshold', 0.70),
         'stats':            manager.get_stats(),
     })
+
+
+class CopilotAgentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        message = request.data.get('message', '').strip()
+        history = request.data.get('history', [])
+        if not message:
+            return Response({'error': 'Message vide'}, status=400)
+        org = get_org(request)
+        from .copilot_agent import run_agent
+        try:
+            reply = run_agent(message, org, history)
+            return Response({'reply': reply})
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)

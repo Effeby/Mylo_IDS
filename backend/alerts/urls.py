@@ -5,7 +5,7 @@ from .views import (
     AnalyzeView, BlacklistView, SettingsView, TimelineView,
     AssetListView, AssetDetailView, AssetDiscoverView,
     IPBaselineListView, IPBaselineDetailView, BehavioralStatsView,
-    CorrelationListView, CorrelationDetailView, CorrelationStatsView,
+    CorrelationListView, CorrelationDetailView, CorrelationStatsView, CopilotAgentView,
 )
 
 urlpatterns = [
@@ -34,4 +34,6 @@ urlpatterns = [
     path("mobile/dashboard/", views.mobile_dashboard, name="mobile-dashboard"),
     
     path('baseline/phase/', views.baseline_phase, name='baseline-phase'),
+
+    path('api/copilot/agent/', CopilotAgentView.as_view()),
 ]
