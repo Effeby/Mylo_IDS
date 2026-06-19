@@ -38,19 +38,25 @@ class WazuhClient:
         return token
 
     def get_alerts(self, limit=50):
-        token = self.authenticate()
-        url = f"{self.api_url}/alerts"
-        headers = {'Authorization': f'Bearer {token}'}
-        resp = requests.get(
+        url = f"{self.base_url}:9200/wazuh-alerts-*/_search"
+        payload = {
+            "size": limit,
+            "sort": [{"@timestamp": {"order": "desc"}}],
+            "query": {"match_all": {}}
+        }
+        resp = requests.post(
             url,
-            headers=headers,
-            params={'limit': limit, 'sort': '-timestamp'},
+            json=payload,
+            auth=(
+                getattr(settings, 'WAZUH_INDEXER_USER', 'admin'),
+                getattr(settings, 'WAZUH_INDEXER_PASSWORD', '')
+            ),
             verify=self.verify,
             timeout=self.timeout,
         )
         resp.raise_for_status()
-        data = resp.json().get('data', {})
-        return data.get('affected_items', [])
+        hits = resp.json().get('hits', {}).get('hits', [])
+        return [h['_source'] for h in hits]
 
     def status(self):
         try:
