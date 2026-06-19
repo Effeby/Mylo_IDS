@@ -204,6 +204,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'http://172.16.1.94:5173',
 ]
 CORS_ALLOW_CREDENTIALS = True
  
@@ -230,3 +231,6 @@ MYLO_FASTAPI_URL    = os.environ.get('MYLO_FASTAPI_URL', 'http://api:8000')
 MYLO_AUTO_BLOCK     = False       # Blocage automatique des IP suspectes
 MYLO_BLOCK_THRESHOLD = 0.85       # Score au-dessus duquel on bloque auto
 MYLO_RIVER_ENABLED  = True        # Apprentissage en ligne activé
+
+WAZUH_INDEXER_USER = os.environ.get('WAZUH_INDEXER_USER', 'admin')
+WAZUH_INDEXER_PASSWORD = os.environ.get('WAZUH_INDEXER_PASSWORD', '')
