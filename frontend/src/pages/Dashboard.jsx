@@ -99,7 +99,7 @@ export default function Dashboard() {
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:20 }}>
         {[
           { label:'Flux analysés',    value:total.toLocaleString(),   color:'#3B82F6', icon:Activity },
-          { label:'Attaques',         value:attacks.toLocaleString(), color:'#EF4444', icon:AlertTriangle },
+          { label:'Alertes',         value:attacks.toLocaleString(), color:'#EF4444', icon:AlertTriangle },
           { label:'Trafic normal',    value:(total-attacks).toLocaleString(), color:'#22C55E', icon:CheckCircle },
           { label:'Taux d\'attaque',  value:`${attackRate}%`,         color:'#F97316', icon:Zap },
         ].map(({ label, value, color, icon:Icon }) => (

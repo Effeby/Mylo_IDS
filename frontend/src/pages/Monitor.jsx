@@ -103,7 +103,7 @@ export default function Monitor() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
           { label: 'Total analysé', value: stats.total,   icon: Wifi,         color: '#3B82F6' },
-          { label: 'Attaques',      value: stats.attacks, icon: AlertTriangle, color: '#EF4444' },
+          { label: 'Alertes',      value: stats.attacks, icon: AlertTriangle, color: '#EF4444' },
           { label: 'Normal',        value: stats.normal,  icon: CheckCircle,   color: '#22C55E' },
           {
             label: 'Taux d\'attaque',
@@ -215,7 +215,7 @@ export default function Monitor() {
           whiteSpace: 'nowrap',
         }}>
           <Filter size={12} />
-          Attaques seulement
+          Alertes seulement
         </button>
       </div>
 

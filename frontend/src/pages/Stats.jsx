@@ -165,7 +165,7 @@ export default function Stats() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
         {[
           { label: 'Total analysé',   value: stats.total,   color: '#3B82F6' },
-          { label: 'Attaques',        value: stats.attacks, color: '#EF4444' },
+          { label: 'Alertes',        value: stats.attacks, color: '#EF4444' },
           { label: 'Normal',          value: stats.normal,  color: '#22C55E' },
           { label: "Taux d'attaque",  value: `${(stats.attack_rate * 100).toFixed(1)}%`, color: '#F97316' },
         ].map(({ label, value, color }) => (
