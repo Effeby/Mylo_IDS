@@ -439,6 +439,7 @@ class AlertDetailView(APIView):
                     }
                 )
         elif new_status == 'confirmed' and a.features:
+            true_label = request.data.get('true_label', a.attack_type)
             trigger_river_learning(a.features, a.attack_type)
             river_triggered = True
 
