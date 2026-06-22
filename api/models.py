@@ -13,14 +13,19 @@ def load_models():
 
     try:
         models["xgb_binary"]    = joblib.load(os.path.join(MODELS_DIR, "mylo_xgb_binary.pkl"))
+        models["xgb_binary"].set_params(nthread=2)
         print("  ✓ mylo_xgb_binary.pkl")
         models["xgb_multi"]     = joblib.load(os.path.join(MODELS_DIR, "mylo_xgb_multiclass.pkl"))
+        models["xgb_binary"].set_params(nthread=2)
         print("  ✓ mylo_xgb_multiclass.pkl")
         models["xgb_features"]  = joblib.load(os.path.join(MODELS_DIR, "xgb_features.pkl"))
+        models["xgb_binary"].set_params(nthread=2)
         print("  ✓ xgb_features.pkl")
         models["label_encoder"] = joblib.load(os.path.join(MODELS_DIR, "label_encoder.pkl"))
+        models["xgb_binary"].set_params(nthread=2)
         print("  ✓ label_encoder.pkl")
         models["encoders"]      = joblib.load(os.path.join(MODELS_DIR, "encoders.pkl"))
+        models["xgb_binary"].set_params(nthread=2)
         print("  ✓ encoders.pkl")
     except FileNotFoundError as e:
         print(f"  ERREUR : fichier manquant → {e}")
