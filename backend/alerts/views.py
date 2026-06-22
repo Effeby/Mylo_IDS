@@ -429,7 +429,8 @@ class AlertDetailView(APIView):
         if new_status == 'false_positive' and a.features:
             trigger_river_learning(a.features, 'Normal')
             river_triggered = True
-            if a.src_ip and a.binary_confidence < 0.85:
+            s_fp = IDSSettings.get(a.organisation)
+            if a.src_ip and a.binary_confidence < s_fp.binary_threshold:
                 WhitelistedIP.objects.get_or_create(
                     organisation=get_org(request),
                     ip_address=a.src_ip,
@@ -486,7 +487,7 @@ class AnalyzeView(APIView):
     def post(self, request):
         traffic_data = request.data
         org          = get_org(request)
-
+        s            = IDSSettings.get(org)
         src_ip = traffic_data.get('src_ip') or random.choice(SIMULATED_SRC_IPS)
         dst_ip = traffic_data.get('dst_ip') or random.choice(SIMULATED_DST_IPS)
 
@@ -499,7 +500,7 @@ class AnalyzeView(APIView):
                 )
                 prediction = resp.json()
                 confidence = prediction.get('binary_confidence', 0)
-                if confidence < 0.85:
+                if confidence < s.binary_threshold:
                     return Response({
                         'is_attack': False, 'binary_label': 'Normal',
                         'binary_confidence': 0.0, 'attack_type': 'Normal',
