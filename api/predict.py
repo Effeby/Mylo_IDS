@@ -115,7 +115,7 @@ def get_river_prediction(features_dict: dict, models: dict) -> dict | None:
     Retourne None si River n'a pas assez appris (< 10 exemples).
     """
     try:
-        river_model = models.get("river_model")
+        river_model = models.get("river")
         if river_model is None:
             return None
 

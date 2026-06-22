@@ -24,7 +24,7 @@ app_state = {
     }
 }
 
-RIVER_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml', 'models', 'mylo_river.pkl')
+RIVER_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml', 'models', 'river_model.pkl')
 
 def load_river_model():
     """Charge le modèle River depuis le fichier pkl."""
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     print("=" * 45)
     models = load_models()
     # Ajouter River dans le dict des modèles
-    models["river_model"] = load_river_model()
+    models["river"] = load_river_model()
     app_state["models"] = models
     yield
     print("\n  Mylo IPS — Arrêt API")
@@ -74,7 +74,7 @@ app.add_middleware(
 @app.get("/health")
 def health():
     models_loaded = app_state["models"] is not None
-    river_loaded  = app_state["models"].get("river_model") is not None if models_loaded else False
+    river_loaded  = app_state["models"].get("river") is not None if models_loaded else False
     return {
         "status":        "ok" if models_loaded else "error",
         "models_loaded": models_loaded,
@@ -122,8 +122,8 @@ def predict_endpoint(data: TrafficInput):
 def reload_river():
     """Recharge le modèle River depuis le fichier pkl — appeler après apprentissage."""
     try:
-        app_state["models"]["river_model"] = load_river_model()
-        return {"status": "ok", "river_loaded": app_state["models"]["river_model"] is not None}
+        app_state["models"]["river"] = load_river_model()
+        return {"status": "ok", "river_loaded": app_state["models"]["river"] is not None}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
@@ -151,7 +151,7 @@ def get_stats():
             "features":          len(models["xgb_features"]) if models else 0,
             "classes":           list(models["label_encoder"].classes_) if models else [],
             "datasets":          ["NSL-KDD", "CICIDS2017", "NIDS", "CIC-IDS2018", "UNSW-NB15"],
-            "river_loaded":      models.get("river_model") is not None,
+            "river_loaded":      models.get("river") is not None,
             "binary_threshold":  0.50,
         }
     )

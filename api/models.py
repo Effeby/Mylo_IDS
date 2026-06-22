@@ -1,32 +1,43 @@
 import joblib
 import os
 
-# ─── CHEMINS ──────────────────────────────────────────────────────────
-BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, "ml", "models")
 
 
 def load_models():
-    """Charge tous les modèles et encoders au démarrage de l'API."""
     print("  Chargement des modèles Mylo IPS...")
+    
     models = {}
 
+    # ─── River ─────────────────────────────
+    river_path = os.path.join(MODELS_DIR, "river_model.pkl")
+    if os.path.exists(river_path):
+        models["river"] = joblib.load(river_path)
+        print("  ✓ river_model.pkl")
+    else:
+        models["river"] = None
+        print("  ⚠️ river_model.pkl absent")
+
+    # ─── XGBoost ───────────────────────────
     try:
-        models["xgb_binary"]    = joblib.load(os.path.join(MODELS_DIR, "mylo_xgb_binary.pkl"))
+        models["xgb_binary"] = joblib.load(os.path.join(MODELS_DIR, "mylo_xgb_binary.pkl"))
         models["xgb_binary"].set_params(nthread=2)
         print("  ✓ mylo_xgb_binary.pkl")
-        models["xgb_multi"]     = joblib.load(os.path.join(MODELS_DIR, "mylo_xgb_multiclass.pkl"))
-        models["xgb_binary"].set_params(nthread=2)
+
+        models["xgb_multi"] = joblib.load(os.path.join(MODELS_DIR, "mylo_xgb_multiclass.pkl"))
+        models["xgb_multi"].set_params(nthread=2)
         print("  ✓ mylo_xgb_multiclass.pkl")
-        models["xgb_features"]  = joblib.load(os.path.join(MODELS_DIR, "xgb_features.pkl"))
-        models["xgb_binary"].set_params(nthread=2)
+
+        models["xgb_features"] = joblib.load(os.path.join(MODELS_DIR, "xgb_features.pkl"))
         print("  ✓ xgb_features.pkl")
+
         models["label_encoder"] = joblib.load(os.path.join(MODELS_DIR, "label_encoder.pkl"))
-        models["xgb_binary"].set_params(nthread=2)
         print("  ✓ label_encoder.pkl")
-        models["encoders"]      = joblib.load(os.path.join(MODELS_DIR, "encoders.pkl"))
-        models["xgb_binary"].set_params(nthread=2)
+
+        models["encoders"] = joblib.load(os.path.join(MODELS_DIR, "encoders.pkl"))
         print("  ✓ encoders.pkl")
+
     except FileNotFoundError as e:
         print(f"  ERREUR : fichier manquant → {e}")
         raise
@@ -42,3 +53,6 @@ def load_models():
 
     print("  Tous les modèles chargés ✓\n")
     return models
+    
+
+
