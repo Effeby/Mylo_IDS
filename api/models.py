@@ -11,13 +11,13 @@ def load_models():
     models = {}
 
     # ─── River ─────────────────────────────
-    river_path = os.path.join(MODELS_DIR, "river_model.pkl")
+    river_path = os.path.join(MODELS_DIR, "mylo_river.pkl")
     if os.path.exists(river_path):
         models["river"] = joblib.load(river_path)
-        print("  ✓ river_model.pkl")
+        print("  ✓ mylo_river.pkl")
     else:
         models["river"] = None
-        print("  ⚠️ river_model.pkl absent")
+        print("  ⚠️ mylo_river.pkl absent")
 
     # ─── XGBoost ───────────────────────────
     try:

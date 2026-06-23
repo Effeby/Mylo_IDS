@@ -571,7 +571,7 @@ if __name__ == '__main__':
         print("  ⚠  Lance PowerShell en Administrateur\n")
 
     try:
-        sniff(iface=active_ifaces, prn=packet_to_flow, store=False, filter="ip")
+        sniff(iface=active_ifaces, prn=packet_to_flow, store=False, filter="ip and not src host 0.0.0.0")
     except PermissionError:
         print("\n  ✗ Permission refusée.")
         if IS_LINUX:

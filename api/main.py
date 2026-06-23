@@ -24,7 +24,7 @@ app_state = {
     }
 }
 
-RIVER_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml', 'models', 'river_model.pkl')
+RIVER_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml', 'models', 'mylo_river.pkl')
 
 def load_river_model():
     """Charge le modèle River depuis le fichier pkl."""

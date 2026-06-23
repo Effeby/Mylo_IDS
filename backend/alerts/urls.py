@@ -35,5 +35,5 @@ urlpatterns = [
     
     path('baseline/phase/', views.baseline_phase, name='baseline-phase'),
 
-    path('api/copilot/agent/', CopilotAgentView.as_view()),
+    path('copilot/', CopilotAgentView.as_view(), name='copilot-agent'),
 ]

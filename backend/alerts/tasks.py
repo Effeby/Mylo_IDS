@@ -65,12 +65,31 @@ def poll_wazuh_alerts():
                 resp = requests.post(
                     f"{settings.MYLO_FASTAPI_URL}/predict",
                     json=traffic,
-                    timeout=3,
+                    timeout=30,
                 )
                 if not resp.ok:
                     logger.warning(f"[Wazuh] FastAPI predict failed: {resp.status_code}")
                     continue
                 prediction = resp.json()
+
+                # Override Wazuh rules SSH
+                rule_id = int(rule.get('id', 0))
+                if rule_id in (5763,):
+                    prediction['attack_type'] = 'BruteForce'
+                    prediction['is_attack'] = True
+                    prediction['attack_confidence'] = 0.91
+                    prediction['binary_confidence'] = 0.91
+                    prediction['binary_label'] = 'Attack'
+                    prediction['severity'] = 'HIGH'
+                    prediction['alert_status'] = 'Nouvelle'
+                elif rule_id in (5760, 5710, 5712):
+                    prediction['attack_type'] = 'R2L'
+                    prediction['is_attack'] = True
+                    prediction['attack_confidence'] = 0.85
+                    prediction['binary_confidence'] = 0.85
+                    prediction['binary_label'] = 'Attack'
+                    prediction['severity'] = 'MEDIUM'
+                    prediction['alert_status'] = 'Nouvelle'
 
                 # Persist in Django DB so Wazuh alerts are visible in the UI
                 from .models import Alert

@@ -77,7 +77,7 @@ def execute_tool(tool_name, tool_args, org):
         if tool_args.get("severity"):
             qs = qs.filter(severity=tool_args["severity"])
         limit = min(tool_args.get("limit", 10), 20)
-        alerts = qs.order_by("-timestamp")[:limit]
+        alerts = qs.order_by("-detected_at")[:limit]
         return [
             {
                 "id": a.id,
@@ -158,7 +158,7 @@ def run_agent(user_message: str, org, conversation_history: list = None):
 
     # Premier appel Groq
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model="llama-3.3-70b-versatile",
         messages=messages,
         tools=TOOLS,
         tool_choice="auto",
@@ -189,7 +189,7 @@ def run_agent(user_message: str, org, conversation_history: list = None):
 
         # Deuxième appel — réponse finale avec résultat du tool
         final = client.chat.completions.create(
-            model="llama3-70b-8192",
+            model="llama-3.3-70b-versatile",
             messages=messages,
             max_tokens=1024
         )
