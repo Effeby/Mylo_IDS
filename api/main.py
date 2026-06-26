@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from typing import List
@@ -7,9 +7,15 @@ import uvicorn
 import pickle
 import os
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from .schemas import TrafficInput, PredictionResult, AlertItem, StatsResponse
 from .predict import predict
 from .models import load_models
+
+limiter = Limiter(key_func=get_remote_address)
 
 # ─── ÉTAT GLOBAL ──────────────────────────────────────────────────────
 app_state = {
@@ -69,6 +75,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # ─── ENDPOINTS ────────────────────────────────────────────────────────
 
 @app.get("/health")
@@ -85,7 +94,8 @@ def health():
 
 
 @app.post("/predict", response_model=PredictionResult)
-def predict_endpoint(data: TrafficInput):
+@limiter.limit("60/minute")
+def predict_endpoint(request: Request, data: TrafficInput):
     if app_state["models"] is None:
         raise HTTPException(status_code=503, detail="Modèles non chargés")
 
@@ -129,7 +139,8 @@ def reload_river():
 
 
 @app.get("/alerts", response_model=List[AlertItem])
-def get_alerts(limit: int = 20):
+@limiter.limit("60/minute")
+def get_alerts(request: Request, limit: int = 20):
     limit = min(limit, 100)
     alerts = app_state["alerts"][-limit:]
     return list(reversed(alerts))

@@ -35,6 +35,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Passe à True derrière un reverse-proxy HTTPS (production). Reste à False
+# en lab/dev HTTP (172.16.x.x sans TLS) pour ne pas casser les cookies de session.
+DJANGO_HTTPS_ENABLED = os.environ.get('DJANGO_HTTPS_ENABLED', 'False') == 'True'
+
 # URL interne Django (pour les appels internes)
 MYLO_DJANGO_URL = os.environ.get('MYLO_DJANGO_URL', 'http://localhost:8001')
 
@@ -104,6 +108,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'axes',
     # Mylo apps
     'accounts',
     'alerts',
@@ -124,7 +129,18 @@ MIDDLEWARE = [
 
     'accounts.middleware.TenantMiddleware',
     'accounts.middleware.AuditMiddleware',
+    'axes.middleware.AxesMiddleware',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# ─── django-axes (anti brute-force /admin/ et vues utilisant authenticate()) ──
+AXES_FAILURE_LIMIT  = 5
+AXES_COOLOFF_TIME   = 0.5  # heures
+AXES_LOCKOUT_PARAMETERS = ['username']
 
 ROOT_URLCONF = 'core.urls'
  
@@ -199,6 +215,19 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# ─── SÉCURITÉ COOKIES / SESSIONS ───────────────────────────────────────
+SESSION_COOKIE_HTTPONLY        = True
+SESSION_COOKIE_SAMESITE        = 'Strict'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE             = 1800  # 30 minutes
+SESSION_COOKIE_SECURE          = DJANGO_HTTPS_ENABLED
+CSRF_COOKIE_SECURE             = DJANGO_HTTPS_ENABLED
+
+# ─── HEADERS HTTP SÉCURITÉ (défense en profondeur, en plus de Nginx) ──
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY      = 'strict-origin-when-cross-origin'
+X_FRAME_OPTIONS             = 'DENY'
 
 # ─── CORS ─────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = [

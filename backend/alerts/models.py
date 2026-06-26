@@ -11,16 +11,22 @@ class Alert(models.Model):
         ('LOW',      'Low'),
     ]
     ATTACK_TYPES = [
-        ('Normal',      'Normal'),
-        ('DoS',         'DoS'),
-        ('DDoS',        'DDoS'),
-        ('Probe',       'Probe'),
-        ('R2L',         'R2L'),
-        ('U2R',         'U2R'),
-        ('BruteForce',  'BruteForce'),
-        ('WebAttack',   'WebAttack'),
-        ('Botnet',      'Botnet'),
-        ('Infiltration','Infiltration'),
+        ('Normal',              'Normal'),
+        ('DoS',                 'DoS'),
+        ('DDoS',                'DDoS'),
+        ('Probe',               'Probe'),
+        ('R2L',                 'R2L'),
+        ('U2R',                 'U2R'),
+        ('BruteForce',          'BruteForce'),
+        ('WebAttack',           'WebAttack'),
+        ('Botnet',              'Botnet'),
+        ('Infiltration',        'Infiltration'),
+        # Classes issues du mapping rule_id Wazuh (alerts/wazuh_rules.py)
+        ('PortScan',            'Port Scan'),
+        ('Malware',             'Malware'),
+        ('PrivilegeEscalation', 'Privilege Escalation'),
+        ('Reconnaissance',      'Reconnaissance'),
+        ('Suspicious',          'Suspicious'),
     ]
     STATUSES = [
         ('new',           'Nouvelle'),

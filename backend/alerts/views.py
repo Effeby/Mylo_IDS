@@ -10,11 +10,13 @@ import requests
 import random
 import threading
 from django.conf import settings
+from rest_framework.exceptions import ValidationError
 from .models import Alert, Asset, BlacklistedIP, WhitelistedIP, IDSSettings, NetworkLog
 from alerts.baseline import BaselineManager
 from accounts.models import AuditLog
 from alerts.opnsense_client import OPNsenseClient
 from .wazuh_client import WazuhClient
+from core.validators import validate_ip, validate_ip_or_cidr, validate_safe_text
 
 
 # ─── HELPERS TENANT ──────────────────────────────────────────────────────────
@@ -206,17 +208,22 @@ SEVERITY_THRESHOLDS = [
 ]
 
 ATTACK_WEIGHTS = {
-    'U2R':         1.5,
-    'R2L':         1.3,
-    'Infiltration':1.3,
-    'WebAttack':   1.2,
-    'Botnet':      1.2,
-    'BruteForce':  1.1,
-    'DoS':         1.1,
-    'DDoS':        1.1,
-    'Probe':       0.8,
-    'Behavioral':  0.9,
-    'Normal':      0.0,
+    'U2R':                 1.5,
+    'PrivilegeEscalation': 1.5,
+    'R2L':                 1.3,
+    'Infiltration':        1.3,
+    'Malware':             1.4,
+    'WebAttack':           1.2,
+    'Botnet':              1.2,
+    'BruteForce':          1.1,
+    'DoS':                 1.1,
+    'DDoS':                1.1,
+    'Probe':               0.8,
+    'PortScan':            0.8,
+    'Reconnaissance':      0.8,
+    'Behavioral':          0.9,
+    'Suspicious':          0.9,
+    'Normal':              0.0,
 }
 
 
@@ -755,9 +762,13 @@ class AssetListView(APIView):
         if not request.user.can_manage_users and not request.user.can_configure_ids:
             return Response({'error': 'Permission insuffisante'}, status=403)
         d = request.data
+        try:
+            ip_address = validate_ip(d.get('ip_address'))
+        except ValidationError as e:
+            return Response({'error': str(e.detail[0]) if isinstance(e.detail, list) else str(e)}, status=400)
         asset, created = Asset.objects.get_or_create(
             organisation=get_org(request),
-            ip_address=d.get('ip_address'),
+            ip_address=ip_address,
             defaults={
                 'mac_address': d.get('mac_address', ''),
                 'hostname':    d.get('hostname', ''),
@@ -815,6 +826,10 @@ class AssetDiscoverView(APIView):
                 {'error': 'Fournir target_ip (ex: 192.168.1.0/24)'},
                 status=400
             )
+        try:
+            target_ip = validate_ip_or_cidr(target_ip)
+        except ValidationError as e:
+            return Response({'error': str(e.detail[0]) if isinstance(e.detail, list) else str(e)}, status=400)
 
         try:
             from discovery import discover_and_fingerprint
@@ -856,8 +871,14 @@ class BlacklistView(APIView):
         } for ip in ips])
 
     def post(self, request):
-        ip     = request.data.get('ip_address')
-        reason = request.data.get('reason', 'Bloqué manuellement')
+        try:
+            ip     = validate_ip(request.data.get('ip_address'))
+            reason = validate_safe_text(
+                request.data.get('reason', 'Bloqué manuellement'),
+                max_length=255, field_name='reason',
+            )
+        except ValidationError as e:
+            return Response({'error': str(e.detail[0]) if isinstance(e.detail, list) else str(e)}, status=400)
         org = get_org(request)
         obj, created = BlacklistedIP.objects.get_or_create(
             organisation=org,
@@ -906,7 +927,10 @@ class BlacklistView(APIView):
         })
 
     def delete(self, request):
-        ip = request.data.get('ip_address')
+        try:
+            ip = validate_ip(request.data.get('ip_address'))
+        except ValidationError as e:
+            return Response({'error': str(e.detail[0]) if isinstance(e.detail, list) else str(e)}, status=400)
         org = get_org(request)
         tenant_qs(BlacklistedIP, request).filter(ip_address=ip).update(is_active=False)
 

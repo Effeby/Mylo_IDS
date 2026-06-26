@@ -172,6 +172,8 @@ class AuditLog(models.Model):
         ('alert_view',         'Consultation d\'alerte'),
         ('alert_status_update','Mise à jour statut alerte'),
         ('alert_feedback',     'Feedback River sur alerte'),
+        # Wazuh
+        ('wazuh_rule_unmapped','Rule ID Wazuh non mappé'),
         # IPs
         ('ip_block',           'Blocage IP'),
         ('ip_unblock',         'Déblocage IP'),
