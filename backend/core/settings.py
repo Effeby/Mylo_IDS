@@ -137,10 +137,11 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# ─── django-axes (anti brute-force /admin/ et vues utilisant authenticate()) ──
+# ─── django-axes (anti brute-force /admin/ et LoginView custom — voir accounts/views.py) ──
 AXES_FAILURE_LIMIT  = 5
-AXES_COOLOFF_TIME   = 0.5  # heures
-AXES_LOCKOUT_PARAMETERS = ['username']
+AXES_COOLOFF_TIME   = 0.5  # heures → verrou IP de 30 minutes après 5 échecs
+AXES_LOCKOUT_PARAMETERS = ['ip_address']  # bloque par IP, peu importe le username tenté
+AXES_RESET_ON_SUCCESS   = True            # un login réussi efface les échecs précédents
 
 ROOT_URLCONF = 'core.urls'
  

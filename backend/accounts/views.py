@@ -7,6 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils.text import slugify
+from axes.handlers.proxy import AxesProxyHandler
+from axes.helpers import get_credentials
 from .models import AuditLog, Organisation
 from rest_framework.decorators import api_view, permission_classes
 from .totp import generate_totp_secret, get_totp_uri, verify_totp_code, generate_qr_base64
@@ -140,13 +142,26 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        ip       = get_client_ip(request)
+        username    = request.data.get('username')
+        password    = request.data.get('password')
+        ip          = get_client_ip(request)
+        credentials = get_credentials(username)
+
+        # ── django-axes : verrou par IP après 5 échecs, 30 min (AXES_COOLOFF_TIME) ──
+        # Vérifié avant toute requête DB sur l'utilisateur pour ne rien révéler
+        # (même si l'IP est bloquée, le message reste identique à un échec normal).
+        if not AxesProxyHandler.is_allowed(request, credentials):
+            AuditLog.log(
+                action='login_failed',
+                description=f'IP bloquée (axes) — trop de tentatives, username tenté: {username}',
+                ip_address=ip, success=False,
+            )
+            return Response({'error': 'Identifiants incorrects'}, status=429)
 
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
+            AxesProxyHandler.user_login_failed(sender=User, credentials=credentials, request=request)
             AuditLog.log(
                 action='login_failed',
                 description=f'Tentative avec username: {username}',
@@ -155,6 +170,7 @@ class LoginView(APIView):
             return Response({'error': 'Identifiants incorrects'}, status=401)
 
         if not user.check_password(password):
+            AxesProxyHandler.user_login_failed(sender=User, credentials=credentials, request=request)
             user.failed_login_attempts += 1
             if user.failed_login_attempts >= 5:
                 user.is_locked = True
@@ -175,6 +191,9 @@ class LoginView(APIView):
         user.failed_login_attempts = 0
         user.last_login_ip = ip
         user.save(update_fields=['failed_login_attempts', 'last_login_ip'])
+
+        # Réinitialise le compteur d'échecs axes (AXES_RESET_ON_SUCCESS) pour cette IP
+        AxesProxyHandler.user_logged_in(sender=User, request=request, user=user)
 
         # Sauvegarder les credentials dans .env.capture pour capture.py
         # Seulement pour les rôles qui peuvent configurer l'IDS (niveau 3+)
