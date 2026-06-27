@@ -7,12 +7,14 @@ Les credentials sont lus depuis .env.capture
 Ce fichier est créé automatiquement par Mylo au premier login admin.
 """
 import time
+import json
 import requests
 import threading
 import os
 import sys
 import platform
 from collections import defaultdict
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw, DNS, DNSQR
 from pathlib import Path
 
@@ -32,6 +34,11 @@ RIVER_AUTO_LEARN_THRESHOLD = 0.70
 
 AUTH_TOKEN = None
 AUTH_USER  = None
+token_lock = threading.Lock()
+
+# ─── Mise à jour live du token (depuis Django, sans redémarrer le container) ──
+UPDATE_TOKEN_PORT   = int(os.environ.get("CAPTURE_AGENT_PORT", "9999"))
+CAPTURE_AGENT_SECRET = os.environ.get("CAPTURE_AGENT_SECRET", "")
 
 PROTO_MAP = {'TCP': 2, 'UDP': 1, 'ICMP': 0, 'OTHER': 2}
 FLAG_MAP  = {'S': 2, 'SA': 4, 'A': 10, 'FA': 6, 'R': 8, 'PA': 24}
@@ -187,6 +194,69 @@ def get_token():
 
 def get_headers():
     return {'Authorization': f'Bearer {AUTH_TOKEN}'} if AUTH_TOKEN else {}
+
+
+# ─── Mini serveur HTTP — mise à jour live du token (stdlib uniquement) ────────
+class TokenUpdateHandler(BaseHTTPRequestHandler):
+    """
+    Expose POST /update-token/ pour que Django pousse un nouveau token JWT
+    (après login TOTP) sans avoir à redémarrer le container de capture.
+    """
+
+    def log_message(self, format, *args):
+        pass  # silence les logs HTTP par défaut (garde la sortie capture.py lisible)
+
+    def _send_json(self, status_code: int, payload: dict):
+        body = json.dumps(payload).encode('utf-8')
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        global AUTH_TOKEN
+
+        if self.path.rstrip('/') != '/update-token':
+            self._send_json(404, {'error': 'not found'})
+            return
+
+        if CAPTURE_AGENT_SECRET:
+            if self.headers.get('X-Capture-Secret') != CAPTURE_AGENT_SECRET:
+                self._send_json(401, {'error': 'unauthorized'})
+                return
+
+        try:
+            length = int(self.headers.get('Content-Length', 0) or 0)
+            raw    = self.rfile.read(length) if length else b'{}'
+            data   = json.loads(raw or b'{}')
+            token  = data.get('token')
+        except Exception:
+            self._send_json(400, {'error': 'invalid JSON'})
+            return
+
+        if not token:
+            self._send_json(400, {'error': 'token requis'})
+            return
+
+        with token_lock:
+            AUTH_TOKEN = token
+        # Réponse envoyée avant le log : un souci d'encodage console ne doit
+        # jamais empêcher la confirmation HTTP de partir.
+        self._send_json(200, {'status': 'ok'})
+        try:
+            print("  🔑 Token capture mis à jour en direct via /update-token/")
+        except Exception:
+            pass
+
+
+def start_token_update_server():
+    try:
+        server = ThreadingHTTPServer(('0.0.0.0', UPDATE_TOKEN_PORT), TokenUpdateHandler)
+        print(f"  🔌 Agent update-token en écoute sur 0.0.0.0:{UPDATE_TOKEN_PORT}")
+        server.serve_forever()
+    except Exception as e:
+        print(f"  ✗ Agent update-token indisponible: {e}")
 
 
 def packet_to_flow(pkt):
@@ -559,6 +629,7 @@ if __name__ == '__main__':
     get_token()
     threading.Thread(target=send_flows, daemon=True).start()
     threading.Thread(target=print_stats, daemon=True).start()
+    threading.Thread(target=start_token_update_server, daemon=True).start()
 
     print(f"  Interfaces : {', '.join(active_ifaces)}")
     print(f"  Fenêtre    : {WINDOW_SEC}s")

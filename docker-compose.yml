@@ -130,6 +130,7 @@ services:
     environment:
       - CAPTURE_IFACE=enp0s3,enp0s8,enp0s9
       - MYLO_DJANGO_URL=http://173.212.241.228:8001
+      - CAPTURE_AGENT_SECRET=${CAPTURE_AGENT_SECRET:-}
     volumes:
       - ./.env.capture:/app/.env.capture:ro
       - ./ml/models:/app/ml/models:ro

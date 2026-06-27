@@ -44,6 +44,19 @@ DJANGO_HTTPS_ENABLED = os.environ.get('DJANGO_HTTPS_ENABLED', 'False') == 'True'
 # URL interne Django (pour les appels internes)
 MYLO_DJANGO_URL = os.environ.get('MYLO_DJANGO_URL', 'http://localhost:8001')
 
+# ─── Agent de capture (ml/capture.py) ──────────────────────────────────
+# URL du mini serveur HTTP exposé par capture.py. IMPORTANT : capture.py
+# tourne sur une sonde réseau séparée (pas ce VPS, pas un container du même
+# docker-compose) — ni DNS Docker ni "localhost" ne fonctionnent. Il faut
+# l'IP de la sonde joignable depuis ce serveur via le réseau privé (ex:
+# Contabo private networking / VPN). Voir .env: CAPTURE_AGENT_URL.
+# Vide par défaut : si non configuré, la mise à jour live du token est
+# simplement ignorée (capture.py reste sur le mécanisme .env.capture existant).
+CAPTURE_AGENT_URL    = os.environ.get('CAPTURE_AGENT_URL', '')
+# Secret partagé optionnel, envoyé dans le header X-Capture-Secret. Si vide,
+# capture.py accepte la mise à jour sans vérification (comportement ouvert).
+CAPTURE_AGENT_SECRET = os.environ.get('CAPTURE_AGENT_SECRET', '')
+
 
 # ── Celery ──────────────────────────────────────────────
 CELERY_BROKER_URL    = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')

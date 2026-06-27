@@ -1,3 +1,5 @@
+import threading
+import requests
 from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -19,6 +21,31 @@ User = get_user_model()
 def get_client_ip(request):
     ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
     return ip or request.META.get('REMOTE_ADDR')
+
+
+def _push_token_to_capture_agent(token: str):
+    """
+    Pousse le nouveau token JWT à l'agent de capture (ml/capture.py) sans
+    bloquer la requête de login. À appeler depuis un thread séparé.
+    Échec silencieux si l'agent est indisponible — capture.py retombe sur
+    le mécanisme .env.capture existant au prochain 401.
+    """
+    agent_url = getattr(settings, 'CAPTURE_AGENT_URL', '')
+    if not agent_url:
+        return
+    headers = {}
+    secret = getattr(settings, 'CAPTURE_AGENT_SECRET', '')
+    if secret:
+        headers['X-Capture-Secret'] = secret
+    try:
+        requests.post(
+            f"{agent_url.rstrip('/')}/update-token/",
+            json={'token': token},
+            headers=headers,
+            timeout=3,
+        )
+    except Exception:
+        pass
 
 
 def serialize_user(user):
@@ -616,7 +643,8 @@ def totp_verify(request):
 
     if verify_totp_code(user.totp_secret, code):
         refresh = RefreshToken.for_user(user)
-        
+        access_token = str(refresh.access_token)
+
         # Sauvegarder le token JWT dans .env.capture pour capture.py
         if user.habilitation_level >= 3:
             try:
@@ -626,15 +654,24 @@ def totp_verify(request):
                 with open(env_file, 'w', encoding='utf-8') as f:
                     f.write(
                         f"# Généré automatiquement par Mylo IPS au login TOTP\n"
-                        f"CAPTURE_TOKEN={str(refresh.access_token)}\n"
+                        f"CAPTURE_TOKEN={access_token}\n"
                     )
             except Exception as e:
                 print(f"  ⚠ Token capture non sauvegardé: {e}")
 
+            # Pousse aussi le token en direct à l'agent de capture (s'il est
+            # configuré) pour qu'il n'ait pas à attendre un 401 + relecture
+            # de .env.capture. Non bloquant, échec silencieux.
+            threading.Thread(
+                target=_push_token_to_capture_agent,
+                args=(access_token,),
+                daemon=True,
+            ).start()
+
         return Response({
             "message": "Authentification réussie.",
             "totp_verified": True,
-            "access": str(refresh.access_token),
+            "access": access_token,
             "refresh": str(refresh),
             "user": serialize_user(user),
         })
