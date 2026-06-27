@@ -140,43 +140,20 @@ def nmap_fingerprint(ip: str) -> dict:
 
 # ─── DÉCOUVERTE COMPLÈTE ─────────────────────────────────────────────────────
 
-def discover_and_fingerprint(org, target_cidr: str) -> list:
+def persist_discovered_devices(org, devices: list) -> list:
     """
-    Pipeline complet :
-    1. ARP scan → liste des hôtes actifs
-    2. Nmap fingerprint → OS + ports + services
-    3. Classification automatique → criticité + label
-    4. Enregistrement en base Django
+    Classification automatique + enregistrement en base Django d'une liste
+    d'hôtes déjà découverts/fingerprintés (clés: ip, mac, os_type, open_ports,
+    services). Utilisée à la fois par le pipeline local (discover_and_fingerprint)
+    et par les résultats remontés par l'agent capture distant.
     """
     from alerts.models import Asset
 
-    # Étape 1 — ARP scan
-    clients = arp_scan(target_cidr)
-    if not clients:
-        print("[Discovery] Aucun hôte trouvé")
-        return []
-
-    assets  = []
-    results = {}
-
-    # Étape 2 — Nmap fingerprinting (en parallèle)
-    def _fingerprint(client):
-        ip   = client['ip']
-        info = nmap_fingerprint(ip)
-        results[ip] = {**client, **info}
-        print(f"  [Nmap] {ip} → OS: {info.get('os_type', '?')} | Ports: {info.get('open_ports', [])}")
-
-    threads = [
-        threading.Thread(target=_fingerprint, args=(c,))
-        for c in clients
-    ]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-
-    # Étape 3 + 4 — Classification + sauvegarde
-    for ip, data in results.items():
+    assets = []
+    for data in devices:
+        ip = data.get('ip')
+        if not ip:
+            continue
         open_ports  = data.get('open_ports', [])
         os_type     = data.get('os_type', '')
         services    = data.get('services', {})
@@ -202,3 +179,39 @@ def discover_and_fingerprint(org, target_cidr: str) -> list:
         assets.append(asset)
 
     return assets
+
+
+def discover_and_fingerprint(org, target_cidr: str) -> list:
+    """
+    Pipeline complet (exécuté localement) :
+    1. ARP scan → liste des hôtes actifs
+    2. Nmap fingerprint → OS + ports + services
+    3. Classification automatique → criticité + label
+    4. Enregistrement en base Django
+    """
+    # Étape 1 — ARP scan
+    clients = arp_scan(target_cidr)
+    if not clients:
+        print("[Discovery] Aucun hôte trouvé")
+        return []
+
+    results = {}
+
+    # Étape 2 — Nmap fingerprinting (en parallèle)
+    def _fingerprint(client):
+        ip   = client['ip']
+        info = nmap_fingerprint(ip)
+        results[ip] = {**client, **info}
+        print(f"  [Nmap] {ip} → OS: {info.get('os_type', '?')} | Ports: {info.get('open_ports', [])}")
+
+    threads = [
+        threading.Thread(target=_fingerprint, args=(c,))
+        for c in clients
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    # Étape 3 + 4 — Classification + sauvegarde
+    return persist_discovered_devices(org, list(results.values()))

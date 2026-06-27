@@ -196,11 +196,75 @@ def get_headers():
     return {'Authorization': f'Bearer {AUTH_TOKEN}'} if AUTH_TOKEN else {}
 
 
-# ─── Mini serveur HTTP — mise à jour live du token (stdlib uniquement) ────────
+# ─── Découverte réseau locale (ARP + Nmap) — exécutée par l'agent ─────────────
+def arp_scan_local(target_cidr: str) -> list:
+    """Scan ARP actif sur le segment réseau local de l'agent."""
+    from scapy.all import ARP, Ether, srp
+
+    arp    = ARP(pdst=target_cidr)
+    ether  = Ether(dst='ff:ff:ff:ff:ff:ff')
+    result = srp(ether / arp, timeout=3, verbose=0)[0]
+    return [{'ip': r.psrc, 'mac': r.hwsrc} for _, r in result]
+
+
+def nmap_fingerprint_local(ip: str) -> dict:
+    """Fingerprinting Nmap (OS, ports ouverts, services) sur une IP."""
+    import nmap
+
+    nm = nmap.PortScanner()
+    nm.scan(ip, arguments='-O -sV --top-ports 20 --host-timeout 10s')
+    if ip not in nm.all_hosts():
+        return {}
+
+    host = nm[ip]
+    os_type = ''
+    if 'osmatch' in host and host['osmatch']:
+        os_type = host['osmatch'][0].get('name', '')
+
+    open_ports = []
+    services   = {}
+    for proto in host.all_protocols():
+        for port in host[proto].keys():
+            info = host[proto][port]
+            if info['state'] == 'open':
+                open_ports.append(port)
+                services[port] = info.get('name', '') + (
+                    f" {info.get('product', '')} {info.get('version', '')}".strip()
+                )
+
+    return {'os_type': os_type, 'open_ports': open_ports, 'services': services}
+
+
+def discover_local(target_cidr: str) -> list:
+    """ARP scan + fingerprint Nmap (en parallèle) sur le réseau local de l'agent."""
+    clients = arp_scan_local(target_cidr)
+    if not clients:
+        return []
+
+    results = {}
+
+    def _fingerprint(client):
+        ip   = client['ip']
+        info = nmap_fingerprint_local(ip)
+        results[ip] = {**client, **info}
+
+    threads = [threading.Thread(target=_fingerprint, args=(c,)) for c in clients]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    return list(results.values())
+
+
+# ─── Mini serveur HTTP — token live + découverte réseau (stdlib uniquement) ──
 class TokenUpdateHandler(BaseHTTPRequestHandler):
     """
-    Expose POST /update-token/ pour que Django pousse un nouveau token JWT
-    (après login TOTP) sans avoir à redémarrer le container de capture.
+    Expose :
+    - POST /update-token/ pour que Django pousse un nouveau token JWT
+      (après login TOTP) sans avoir à redémarrer le container de capture.
+    - POST /discover/ pour que Django délègue la découverte réseau (ARP/Nmap)
+      à l'agent, qui lui est bien sur le réseau local de la cible.
     """
 
     def log_message(self, format, *args):
@@ -214,40 +278,76 @@ class TokenUpdateHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_POST(self):
-        global AUTH_TOKEN
-
-        if self.path.rstrip('/') != '/update-token':
-            self._send_json(404, {'error': 'not found'})
-            return
-
+    def _check_secret(self) -> bool:
         if CAPTURE_AGENT_SECRET:
             if self.headers.get('X-Capture-Secret') != CAPTURE_AGENT_SECRET:
                 self._send_json(401, {'error': 'unauthorized'})
+                return False
+        return True
+
+    def _read_json_body(self):
+        length = int(self.headers.get('Content-Length', 0) or 0)
+        raw    = self.rfile.read(length) if length else b'{}'
+        return json.loads(raw or b'{}')
+
+    def do_POST(self):
+        global AUTH_TOKEN
+
+        path = self.path.rstrip('/')
+
+        if path == '/update-token':
+            if not self._check_secret():
+                return
+            try:
+                data  = self._read_json_body()
+                token = data.get('token')
+            except Exception:
+                self._send_json(400, {'error': 'invalid JSON'})
                 return
 
-        try:
-            length = int(self.headers.get('Content-Length', 0) or 0)
-            raw    = self.rfile.read(length) if length else b'{}'
-            data   = json.loads(raw or b'{}')
-            token  = data.get('token')
-        except Exception:
-            self._send_json(400, {'error': 'invalid JSON'})
+            if not token:
+                self._send_json(400, {'error': 'token requis'})
+                return
+
+            with token_lock:
+                AUTH_TOKEN = token
+            # Réponse envoyée avant le log : un souci d'encodage console ne doit
+            # jamais empêcher la confirmation HTTP de partir.
+            self._send_json(200, {'status': 'ok'})
+            try:
+                print("  🔑 Token capture mis à jour en direct via /update-token/")
+            except Exception:
+                pass
             return
 
-        if not token:
-            self._send_json(400, {'error': 'token requis'})
+        if path == '/discover':
+            if not self._check_secret():
+                return
+            try:
+                data = self._read_json_body()
+                cidr = data.get('cidr')
+            except Exception:
+                self._send_json(400, {'error': 'invalid JSON'})
+                return
+
+            if not cidr:
+                self._send_json(400, {'error': 'cidr requis'})
+                return
+
+            try:
+                devices = discover_local(cidr)
+            except Exception as e:
+                self._send_json(500, {'error': f'Erreur découverte : {e}'})
+                return
+
+            self._send_json(200, {'devices': devices})
+            try:
+                print(f"  🔍 Découverte réseau via /discover/ — {len(devices)} hôte(s) sur {cidr}")
+            except Exception:
+                pass
             return
 
-        with token_lock:
-            AUTH_TOKEN = token
-        # Réponse envoyée avant le log : un souci d'encodage console ne doit
-        # jamais empêcher la confirmation HTTP de partir.
-        self._send_json(200, {'status': 'ok'})
-        try:
-            print("  🔑 Token capture mis à jour en direct via /update-token/")
-        except Exception:
-            pass
+        self._send_json(404, {'error': 'not found'})
 
 
 def start_token_update_server():

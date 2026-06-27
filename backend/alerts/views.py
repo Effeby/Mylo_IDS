@@ -831,9 +831,37 @@ class AssetDiscoverView(APIView):
         except ValidationError as e:
             return Response({'error': str(e.detail[0]) if isinstance(e.detail, list) else str(e)}, status=400)
 
+        # La découverte réseau (ARP/Nmap) nécessite d'être sur le réseau local
+        # de la cible. Le serveur Django (ex: Contabo) ne l'est pas forcément
+        # → on délègue à l'agent capture qui tourne lui sur le réseau local.
+        agent_unavailable_msg = (
+            "La découverte réseau n'est disponible que depuis l'agent local. "
+            "Assurez-vous que l'agent capture est actif."
+        )
+        agent_url = getattr(settings, 'CAPTURE_AGENT_URL', '')
+        if not agent_url:
+            return Response({'error': agent_unavailable_msg}, status=503)
+
+        headers = {}
+        secret = getattr(settings, 'CAPTURE_AGENT_SECRET', '')
+        if secret:
+            headers['X-Capture-Secret'] = secret
+
         try:
-            from discovery import discover_and_fingerprint
-            assets = discover_and_fingerprint(org, target_ip)
+            resp = requests.post(
+                f"{agent_url.rstrip('/')}/discover/",
+                json={'cidr': target_ip},
+                headers=headers,
+                timeout=60,
+            )
+            resp.raise_for_status()
+            devices = resp.json().get('devices', [])
+        except Exception:
+            return Response({'error': agent_unavailable_msg}, status=503)
+
+        try:
+            from discovery import persist_discovered_devices
+            assets = persist_discovered_devices(org, devices)
         except Exception as e:
             return Response(
                 {'error': f"Erreur découverte : {e}"},

@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Send, Bot, RefreshCw, Shield } from 'lucide-react'
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
-const DJANGO_URL   = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 // ─── Télécharger rapport PDF ──────────────────────────────────────────────
 async function downloadReportPDF(token) {
@@ -20,13 +19,15 @@ async function downloadReportPDF(token) {
   return true
 }
 
-// ─── Récupérer le contexte réseau complet ────────────────────────────────
+// ─── Récupérer le contexte réseau (juste pour les badges du header) ──────
+// Le system prompt riche (alertes, stats, river, blacklist) est désormais
+// construit côté backend par /api/alerts/copilot/, avec un accès direct à
+// la BDD — plus besoin de le reconstruire ici.
 async function fetchNetworkContext(token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {}
   const context = {}
 
   try {
-    // Alertes récentes
     const aRes = await fetch(`${DJANGO_URL}/api/alerts/?limit=20`, { headers })
     if (aRes.ok) {
       const data = await aRes.json()
@@ -35,124 +36,11 @@ async function fetchNetworkContext(token) {
   } catch(e) {}
 
   try {
-    // Stats globales
     const sRes = await fetch(`${DJANGO_URL}/api/alerts/stats/`, { headers })
     if (sRes.ok) context.stats = await sRes.json()
   } catch(e) {}
 
-  try {
-    // Statut River
-    const rRes = await fetch(`${DJANGO_URL}/api/actions/river/status/`, { headers })
-    if (rRes.ok) context.river = await rRes.json()
-  } catch(e) {}
-
-  try {
-    // IPs blacklistées
-    const bRes = await fetch(`${DJANGO_URL}/api/alerts/blacklist/`, { headers })
-    if (bRes.ok) context.blacklist = await bRes.json()
-  } catch(e) {}
-
   return context
-}
-
-// ─── Construire le system prompt dynamique ────────────────────────────────
-function buildSystemPrompt(ctx) {
-  const { alerts = [], stats = {}, river = {}, blacklist = [] } = ctx
-
-  // Analyser les alertes pour construire un résumé réseau
-  const attackAlerts  = alerts.filter(a => a.is_attack)
-  const recentAttacks = attackAlerts.slice(0, 5)
-  const topIPs        = [...new Set(attackAlerts.map(a => a.src_ip).filter(Boolean))].slice(0, 5)
-  const attackTypes   = [...new Set(attackAlerts.map(a => a.attack_type))]
-  const newAlerts     = alerts.filter(a => a.status === 'new' && a.is_attack).length
-
-  // Résumé du réseau observé
-  const networkSummary = alerts.length > 0 ? `
-ÉTAT ACTUEL DU RÉSEAU (données en temps réel) :
-- Total flux analysés : ${stats.total || alerts.length}
-- Attaques détectées  : ${stats.attacks || attackAlerts.length}
-- Taux d'attaque      : ${stats.attack_rate ? (stats.attack_rate * 100).toFixed(1) : '0'}%
-- Alertes non traitées: ${newAlerts}
-- IPs bloquées actives: ${blacklist.filter(b => b.is_active !== false).length}
-- Types observés      : ${attackTypes.join(', ') || 'Aucun'}
-- IPs suspectes       : ${topIPs.join(', ') || 'Aucune'}
-
-DÉTAIL DES DERNIÈRES ALERTES :
-${recentAttacks.length > 0
-  ? recentAttacks.map(a =>
-      `• [${new Date(a.detected_at).toLocaleTimeString('fr-FR')}] ` +
-      `${a.attack_type} | ${a.severity} | ` +
-      `${a.src_ip || '?'} → ${a.dst_ip || '?'} | ` +
-      `Confiance: ${Math.round((a.binary_confidence || 0) * 100)}% | ` +
-      `Statut: ${a.status}`
-    ).join('\n')
-  : '• Aucune attaque récente détectée'
-}
-
-APPRENTISSAGE EN LIGNE :
-- Flux appris : ${river.total_learned || 0}
-- Précision   : ${river.total_learned > 0 ? ((river.accuracy || 0) * 100).toFixed(1) + '%' : 'En cours d\'initialisation'}
-` : `
-ÉTAT ACTUEL : Aucune donnée disponible — système en attente de trafic.
-`
-
-  return `Tu es Mylo, un analyste SOC junior IA intégré dans un système de prévention d'intrusions.
-
-TON RÔLE :
-Tu aides l'analyste sécurité à comprendre ce qui se passe sur le réseau surveillé.
-Tu analyses les alertes, expliques les comportements suspects, proposes des actions concrètes.
-Tu es direct, précis et professionnel — comme un vrai analyste SOC.
-
-TA PERSONNALITÉ :
-- Tu parles à la première personne ("Je détecte", "J'observe", "Je recommande")
-- Tu ne dis jamais "Tout va bien" — tu donnes toujours : ce que tu vois, le risque, ce que tu recommandes
-- Tu adaptes ton niveau d'urgence à la sévérité : calme pour LOW, alerte pour CRITICAL
-- Tu ne révèles jamais les détails techniques internes (noms de modèles ML, architecture, etc.)
-- Tu parles de "votre réseau" ou "le réseau surveillé" — jamais d'un nom d'entreprise spécifique
-
-CLASSES D'ATTAQUES QUE TU DÉTECTES :
-- Normal      : trafic légitime
-- DoS/DDoS    : saturation de service — impact : indisponibilité
-- Probe       : reconnaissance réseau — scan de ports, cartographie
-- BruteForce  : tentatives de connexion répétées — cible : SSH, FTP, HTTP
-- WebAttack   : SQLi, XSS, injection — cible : applications web
-- Botnet      : machine compromise communiquant avec un serveur de contrôle
-- R2L         : accès externe non autorisé — tentative d'intrusion
-- U2R         : élévation de privilèges — très dangereux
-- Infiltration: mouvement latéral interne — accès non autorisé établi
-
-NIVEAUX DE RISQUE :
-- 🔴 CRITIQUE  : WebAttack, Botnet, R2L, U2R, Infiltration → action immédiate
-- 🟠 ÉLEVÉ     : DoS, DDoS, BruteForce → action rapide
-- 🟡 MOYEN     : Probe → surveillance renforcée
-- 🟢 FAIBLE    : Normal → surveillance standard
-
-FORMAT DE TES RÉPONSES :
-Pour une analyse d'alerte :
-  Analyse :
-  [ce que tu observes]
-  
-  Niveau de risque : [faible/moyen/élevé/critique]
-  
-  Recommandations :
-  - [action 1]
-  - [action 2]
-
-Pour une question générale : réponse directe et concise.
-Pour une commande ("analyse ip X", "top attaques", etc.) : rapport structuré.
-
-COMMANDES QUE TU COMPRENDS :
-- "analyse ip [IP]"      → analyse une IP spécifique
-- "top attaques"         → top types d'attaques observés
-- "ips suspectes"        → liste des IPs les plus actives
-- "blocages actifs"      → IPs bloquées actuellement
-- "état du réseau"       → résumé général
-- "rapport pdf"          → génère un rapport PDF téléchargeable
-- "alerte [id]"          → analyse une alerte spécifique
-
-${networkSummary}
-
-Réponds toujours en français. Sois concis mais complet.`
 }
 
 export default function CopilotChat({ onClose, authToken }) {
@@ -232,38 +120,42 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
     setInput('')
     setLoading(true)
 
-    // Recharger le contexte avant chaque message pour avoir les données fraîches
-    const freshCtx = await fetchNetworkContext(authToken)
-    setCtx(freshCtx)
-    const systemPrompt = buildSystemPrompt(freshCtx)
+    // Rafraîchir les badges du header en arrière-plan (n'affecte pas la requête)
+    fetchNetworkContext(authToken).then(setCtx)
 
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const res = await fetch(`${DJANGO_URL}/api/alerts/copilot/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages.slice(-8),
-            userMsg,
-          ],
-          max_tokens: 1024,
-          temperature: 0.4,  // plus bas = plus précis/déterministe
-        })
+          message: text,
+          // L'agent backend exécute réellement les actions (whitelist_ip,
+          // blacklist_ip...) et construit son propre contexte réseau à jour
+          // depuis la BDD — on lui passe juste l'historique de conversation.
+          history: messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
+        }),
       })
 
-      const data  = await res.json()
-      const reply = data.choices?.[0]?.message?.content || 'Je n\'ai pas pu générer une réponse.'
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `❌ ${data.error || 'Le Copilot est momentanément indisponible.'}`
+        }])
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: data.reply || 'Je n\'ai pas pu générer une réponse.'
+        }])
+      }
 
     } catch(err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '❌ Erreur de connexion à l\'API. Vérifiez votre clé GROQ.'
+        content: '❌ Erreur de connexion au serveur Mylo.'
       }])
     } finally {
       setLoading(false)
