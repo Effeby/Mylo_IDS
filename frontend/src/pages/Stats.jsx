@@ -30,7 +30,7 @@ export default function Stats() {
     setGenerating(true)
     try {
       const token = localStorage.getItem('mylo_access')
-      const res = await fetch('http://localhost:8001/api/reports/pdf/', {
+      const res = await fetch('https://mylo-ids.site/api/reports/pdf/', {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Erreur génération PDF')
@@ -51,9 +51,9 @@ export default function Stats() {
   const downloadCSV = () => {
     const token = localStorage.getItem('mylo_access')
     const a = document.createElement('a')
-    a.href = `http://localhost:8001/api/reports/export/csv/?token=${token}`
+    a.href = `https://mylo-ids.site/api/reports/export/csv/?token=${token}`
     // Utiliser fetch pour les téléchargements authentifiés
-    fetch('http://localhost:8001/api/reports/export/csv/', {
+    fetch('https://mylo-ids.site/api/reports/export/csv/', {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.blob()).then(blob => {
       const url = URL.createObjectURL(blob)
@@ -71,7 +71,7 @@ export default function Stats() {
       const [s, r, tl] = await Promise.all([
         getAlertStats(),
         getRiverStatus(),
-        fetch('http://localhost:8001/api/alerts/timeline/?hours=24', {
+        fetch('https://mylo-ids.site/api/alerts/timeline/?hours=24', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
       ])

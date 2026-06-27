@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Shield, RefreshCw, ChevronDown } from 'lucide-react'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 const ACTION_COLORS = {
   login:'#22C55E', logout:'#64748B', login_failed:'#EF4444',

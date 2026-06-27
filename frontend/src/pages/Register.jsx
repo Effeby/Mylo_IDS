@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Shield, Eye, EyeOff, Building2, User, Mail, Lock, Phone, Globe } from 'lucide-react'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 const SECTORS = [
   { value: 'banking',    label: 'Banque / Finance' },

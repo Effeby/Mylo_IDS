@@ -108,8 +108,8 @@ services:
     env_file:
       - .env
     environment:
-      VITE_DJANGO_URL: http://172.16.1.94:8001
-      VITE_FASTAPI_URL: http://172.16.1.94:8000
+      VITE_DJANGO_URL: http://173.212.241.228:8001
+      VITE_FASTAPI_URL: http://173.212.241.228:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -129,7 +129,7 @@ services:
       - NET_RAW
     environment:
       - CAPTURE_IFACE=enp0s3,enp0s8,enp0s9
-      - MYLO_DJANGO_URL=http://172.16.1.94:8001
+      - MYLO_DJANGO_URL=http://173.212.241.228:8001
     volumes:
       - ./.env.capture:/app/.env.capture:ro
       - ./ml/models:/app/ml/models:ro

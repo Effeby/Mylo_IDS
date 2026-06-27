@@ -4,8 +4,8 @@ import { Bell, RefreshCw, Filter, CheckCircle, XCircle, AlertTriangle, Calendar,
 import { getAlerts, updateAlertStatus, blockIP, getOrganisationName } from '../api/mylo'
 import AlertBadge from '../components/AlertBadge'
 
-const FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL || 'http://localhost:8000'
-const DJANGO_URL  = import.meta.env.VITE_DJANGO_URL  || 'http://localhost:8001'
+const FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL || 'https://mylo-ids.site/api/ml'
+const DJANGO_URL  = import.meta.env.VITE_DJANGO_URL  || 'https://mylo-ids.site'
 
 const TYPES = ['', 'DoS', 'DDoS', 'Probe', 'R2L', 'U2R', 'BruteForce', 'WebAttack', 'Botnet', 'Infiltration']
 

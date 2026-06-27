@@ -33,7 +33,9 @@ SECRET_KEY = 'django-insecure--p4t3vu9)trq%olzu(jutamc&=8ut06!xko-ejl%kj555zd61u
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://mylo-ids.site').split(',')
 
 # Passe à True derrière un reverse-proxy HTTPS (production). Reste à False
 # en lab/dev HTTP (172.16.x.x sans TLS) pour ne pas casser les cookies de session.
@@ -214,6 +216,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
@@ -231,11 +234,8 @@ SECURE_REFERRER_POLICY      = 'strict-origin-when-cross-origin'
 X_FRAME_OPTIONS             = 'DENY'
 
 # ─── CORS ─────────────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://172.16.1.94:5173',
-]
+
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
 CORS_ALLOW_CREDENTIALS = True
  
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { MapPin, RefreshCw, AlertTriangle, Globe, Info } from 'lucide-react'
 import { getAlerts } from '../api/mylo'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 const ATTACK_COLORS = {
   DoS:          '#EF4444',

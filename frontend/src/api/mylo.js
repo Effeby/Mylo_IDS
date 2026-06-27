@@ -2,8 +2,8 @@ import axios from 'axios'
 
 // ─── CLIENTS AXIOS ────────────────────────────────────────────────────
 // Django Backend (auth + BDD + River)
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
-const FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL || 'http://localhost:8000'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
+const FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL || 'https://mylo-ids.site/api/ml'
 
 const django = axios.create({
   baseURL: DJANGO_URL,
@@ -34,7 +34,7 @@ django.interceptors.response.use(
       original._retry = true
       try {
         const refresh = localStorage.getItem('mylo_refresh')
-        const { data } = await axios.post('http://localhost:8001/api/auth/refresh/', { refresh })
+        const { data } = await axios.post('https://mylo-ids.site/api/auth/refresh/', { refresh })
         localStorage.setItem('mylo_access', data.access)
         original.headers.Authorization = `Bearer ${data.access}`
         return django(original)
@@ -152,12 +152,12 @@ export const generateReport = (params = {}) =>
 
 export const exportCSV = () => {
   const token = localStorage.getItem('mylo_access')
-  window.open(`http://localhost:8001/api/reports/export/csv/?token=${token}`, '_blank')
+  window.open(`https://mylo-ids.site/api/reports/export/csv/?token=${token}`, '_blank')
 }
 
 export const exportJSON = () => {
   const token = localStorage.getItem('mylo_access')
-  window.open(`http://localhost:8001/api/reports/export/json/?token=${token}`, '_blank')
+  window.open(`https://mylo-ids.site/api/reports/export/json/?token=${token}`, '_blank')
 }
 
 // ─── FASTAPI DIRECT (inférence rapide sans passer par Django) ─────────

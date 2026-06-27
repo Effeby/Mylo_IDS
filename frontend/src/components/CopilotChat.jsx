@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { X, Send, Bot, RefreshCw, Shield } from 'lucide-react'
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
-const DJANGO_URL   = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL   = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 // ─── Télécharger rapport PDF ──────────────────────────────────────────────
 async function downloadReportPDF(token) {

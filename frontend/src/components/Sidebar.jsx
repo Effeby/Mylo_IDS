@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Activity, Bell, BarChart2, LogOut, Shield, Settings, LayoutDashboard, ClipboardList, Brain, Link2 } from 'lucide-react'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 const MYLO_LOGO_URL = '/mylo_logo.png' // Put the new Mylo logo image here in frontend/public/mylo_logo.png
 
 const nav = [

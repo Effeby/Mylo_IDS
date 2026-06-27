@@ -5,7 +5,7 @@ import { Shield, Activity, AlertTriangle, CheckCircle,
 import { getAlertStats, getRiverStatus, getOrganisationName } from '../api/mylo'
 import AlertBadge from '../components/AlertBadge'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 const COLORS = {
   Normal:'#22C55E', DoS:'#EF4444', DDoS:'#DC2626',

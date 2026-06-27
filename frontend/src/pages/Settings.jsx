@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Save, RefreshCw, Shield, Zap, Brain, Bell, AlertTriangle, Building2, Users, Plus, Trash2, Edit2, X, Check, Lock, Unlock } from 'lucide-react'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 const ATTACK_COLORS = {
   DoS: '#EF4444', DDoS: '#DC2626', Probe: '#EAB308', R2L: '#F97316',

@@ -21,7 +21,7 @@ import VerifyTOTP from './pages/VerifyTOTP'
 import ChangePassword from './pages/ChangePassword'
 import NotFound from './pages/NotFound'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 
 

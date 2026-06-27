@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Brain, RefreshCw, AlertTriangle, Shield, Activity, ChevronDown, Trash2 } from 'lucide-react'
 
-const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'http://localhost:8001'
+const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
 async function apiFetch(path, options = {}) {
   const token = localStorage.getItem('mylo_access')
