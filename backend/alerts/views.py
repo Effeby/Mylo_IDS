@@ -29,6 +29,43 @@ def tenant_qs(model, request):
     return model.objects.filter(organisation=get_org(request))
 
 
+# ─── BLOCAGE AUTO — délégation à l'agent capture ─────────────────────────────
+def auto_block_ip(org, ip, raison):
+    """
+    Bloque une IP sur OPNsense suite à une détection automatique.
+
+    Django tourne désormais sur Contabo et ne peut plus atteindre OPNsense
+    (172.16.1.1, réseau privé) directement. Si MYLO_AUTO_BLOCK est activé et
+    qu'un agent de capture est configuré (CAPTURE_AGENT_URL), on délègue le
+    blocage à cet agent — il tourne lui sur le réseau local (ex: BanqueAdmin
+    10.0.0.2) et peut donc atteindre OPNsense.
+    Sinon, on retombe sur l'appel direct historique (utile en lab où Django
+    et OPNsense sont sur le même réseau).
+    """
+    agent_url = getattr(settings, 'CAPTURE_AGENT_URL', '')
+    if getattr(settings, 'MYLO_AUTO_BLOCK', False) and agent_url:
+        headers = {}
+        secret = getattr(settings, 'CAPTURE_AGENT_SECRET', '')
+        if secret:
+            headers['X-Capture-Secret'] = secret
+        try:
+            r = requests.post(
+                f"{agent_url.rstrip('/')}/block-ip/",
+                json={'ip': ip},
+                headers=headers,
+                timeout=5,
+            )
+            return r.json()
+        except Exception as e:
+            return {'success': False, 'message': f"Agent capture inaccessible: {e}"}
+
+    try:
+        opnsense = OPNsenseClient(organisation=org)
+        return opnsense.bloquer_ip(ip, raison=raison)
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
+
+
 # ─── ENVOIE DE MAILS ─────────────────────────────────────────────
 def send_alert_email(alert, organisation=None):
     """Envoie un email d'alerte à l'organisation concernée."""
@@ -495,47 +532,28 @@ class AnalyzeView(APIView):
     def post(self, request):
         traffic_data = request.data
         org          = get_org(request)
-        s            = IDSSettings.get(org)
         src_ip = traffic_data.get('src_ip') or random.choice(SIMULATED_SRC_IPS)
         dst_ip = traffic_data.get('dst_ip') or random.choice(SIMULATED_DST_IPS)
 
-        if WhitelistedIP.objects.filter(organisation=org, ip_address=src_ip).exists():
-            try:
-                payload = {**traffic_data, 'src_ip': src_ip, 'dst_ip': dst_ip}
-                resp = requests.post(
-                    f"{settings.MYLO_FASTAPI_URL}/predict",
-                    json=payload, timeout=5
-                )
-                prediction = resp.json()
-                confidence = prediction.get('binary_confidence', 0)
-                if confidence < s.binary_threshold:
-                    return Response({
-                        'is_attack': False, 'binary_label': 'Normal',
-                        'binary_confidence': 0.0, 'attack_type': 'Normal',
-                        'attack_confidence': 1.0, 'severity': 'LOW',
-                        'alert_status': 'Ignorée', 'src_ip': src_ip,
-                        'dst_ip': dst_ip, 'whitelisted': True,
-                    })
-                # confidence >= 0.85 → on laisse passer
-                # mais on saute le 2e appel FastAPI ci-dessous
-            except Exception:
-                return Response({
-                    'is_attack': False, 'binary_label': 'Normal',
-                    'binary_confidence': 0.0, 'attack_type': 'Normal',
-                    'attack_confidence': 1.0, 'severity': 'LOW',
-                    'alert_status': 'Ignorée', 'src_ip': src_ip,
-                    'dst_ip': dst_ip, 'whitelisted': True,
-                })
-        else:
-            try:
-                payload = {**traffic_data, 'src_ip': src_ip, 'dst_ip': dst_ip}
-                resp = requests.post(
-                    f"{settings.MYLO_FASTAPI_URL}/predict",
-                    json=payload, timeout=5
-                )
-                prediction = resp.json()
-            except Exception as e:
-                return Response({'error': f'FastAPI indisponible: {e}'}, status=503)
+        # IP whitelistée (src ou dst) → on ignore silencieusement, pas de save BD.
+        if WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists():
+            return Response({
+                'is_attack': False, 'binary_label': 'Normal',
+                'binary_confidence': 0.0, 'attack_type': 'Normal',
+                'attack_confidence': 1.0, 'severity': 'LOW',
+                'alert_status': 'Ignorée', 'src_ip': src_ip,
+                'dst_ip': dst_ip, 'whitelisted': True,
+            })
+
+        try:
+            payload = {**traffic_data, 'src_ip': src_ip, 'dst_ip': dst_ip}
+            resp = requests.post(
+                f"{settings.MYLO_FASTAPI_URL}/predict",
+                json=payload, timeout=5
+            )
+            prediction = resp.json()
+        except Exception as e:
+            return Response({'error': f'FastAPI indisponible: {e}'}, status=503)
 
         asset = get_asset_for_ip(org, dst_ip) or get_asset_for_ip(org, src_ip)
         detection_score = compute_detection_score(prediction)
@@ -630,14 +648,10 @@ class AnalyzeView(APIView):
 
             block_result = None
             if ids.opnsense_enabled:
-                try:
-                    opnsense = OPNsenseClient(organisation=org)
-                    block_result = opnsense.bloquer_ip(
-                        src_ip,
-                        raison=f"Auto — {prediction.get('attack_type')} ({prediction.get('binary_confidence'):.2f})"
-                    )
-                except Exception as e:
-                    block_result = {'success': False, 'message': str(e)}
+                block_result = auto_block_ip(
+                    org, src_ip,
+                    raison=f"Auto — {prediction.get('attack_type')} ({prediction.get('binary_confidence'):.2f})"
+                )
             else:
                 block_result = {
                     'success': False,

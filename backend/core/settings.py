@@ -271,7 +271,11 @@ SIMPLE_JWT = {
  
 # ─── MYLO CONFIG ──────────────────────────────────────────────────────
 MYLO_FASTAPI_URL    = os.environ.get('MYLO_FASTAPI_URL', 'http://api:8000')
-MYLO_AUTO_BLOCK     = False       # Blocage automatique des IP suspectes
+# Blocage automatique des IP suspectes. Quand True, le blocage OPNsense est
+# délégué à l'agent de capture (CAPTURE_AGENT_URL) plutôt qu'appelé
+# directement depuis Django — nécessaire depuis que Django est sur Contabo
+# et ne peut plus atteindre OPNsense (réseau privé) directement.
+MYLO_AUTO_BLOCK     = os.environ.get('MYLO_AUTO_BLOCK', 'True') == 'True'
 MYLO_BLOCK_THRESHOLD = 0.85       # Score au-dessus duquel on bloque auto
 MYLO_RIVER_ENABLED  = True        # Apprentissage en ligne activé
 

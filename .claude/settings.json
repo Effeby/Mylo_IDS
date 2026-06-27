@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(python -m py_compile ml/capture.py backend/alerts/views.py backend/core/settings.py)",
+      "Bash(python3 -m py_compile ml/capture.py backend/alerts/views.py backend/core/settings.py)",
+      "Bash(awk 'NR==529,NR==767' /d/MYLO/backend/alerts/views.py)",
+      "Bash(python -m py_compile backend/alerts/tasks.py backend/alerts/views.py)"
     ]
   }
 }

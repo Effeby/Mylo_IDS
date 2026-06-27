@@ -8,7 +8,9 @@ Ce fichier est créé automatiquement par Mylo au premier login admin.
 """
 import time
 import json
+import ipaddress
 import requests
+import urllib3
 import threading
 import os
 import sys
@@ -17,6 +19,9 @@ from collections import defaultdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw, DNS, DNSQR
 from pathlib import Path
+
+# OPNsense utilise un certificat auto-signé sur le réseau local.
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ─── DÉTECTION OS ─────────────────────────────────────────────────────
 IS_WINDOWS = platform.system() == "Windows"
@@ -39,6 +44,14 @@ token_lock = threading.Lock()
 # ─── Mise à jour live du token (depuis Django, sans redémarrer le container) ──
 UPDATE_TOKEN_PORT   = int(os.environ.get("CAPTURE_AGENT_PORT", "9999"))
 CAPTURE_AGENT_SECRET = os.environ.get("CAPTURE_AGENT_SECRET", "")
+
+# ─── OPNsense (blocage IP délégué par Django — voir /block-ip/) ──────────────
+# L'agent capture tourne sur le réseau local (ex: BanqueAdmin 10.0.0.2) et
+# peut donc atteindre OPNsense, contrairement à Django (hébergé sur Contabo).
+OPNSENSE_URL         = os.environ.get("OPNSENSE_URL", "https://172.16.1.1").rstrip('/')
+OPNSENSE_API_KEY     = os.environ.get("OPNSENSE_API_KEY", "")
+OPNSENSE_API_SECRET  = os.environ.get("OPNSENSE_API_SECRET", "")
+OPNSENSE_ALIAS_NAME  = "mylo_blocked_ips"
 
 PROTO_MAP = {'TCP': 2, 'UDP': 1, 'ICMP': 0, 'OTHER': 2}
 FLAG_MAP  = {'S': 2, 'SA': 4, 'A': 10, 'FA': 6, 'R': 8, 'PA': 24}
@@ -257,6 +270,78 @@ def discover_local(target_cidr: str) -> list:
     return list(results.values())
 
 
+# ─── Blocage OPNsense local (délégué par Django via /block-ip/) ─────────────
+def opnsense_block_ip(ip: str, raison: str = "Mylo IPS — auto") -> dict:
+    """
+    Ajoute une IP à l'alias blocklist OPNsense, en appelant l'API OPNsense
+    directement depuis ce réseau local (voir alerts/opnsense_client.py côté
+    Django pour la même logique, dupliquée ici car cet agent est un script
+    autonome sans Django).
+    """
+    if not OPNSENSE_API_KEY:
+        return {'success': False, 'message': "OPNsense non configuré sur l'agent (OPNSENSE_API_KEY manquant)"}
+
+    auth = (OPNSENSE_API_KEY, OPNSENSE_API_SECRET)
+
+    def _get(endpoint):
+        r = requests.get(f"{OPNSENSE_URL}/api/{endpoint}", auth=auth, verify=False, timeout=5)
+        r.raise_for_status()
+        return r.json()
+
+    def _post(endpoint, data=None):
+        r = requests.post(f"{OPNSENSE_URL}/api/{endpoint}", json=data or {}, auth=auth, verify=False, timeout=5)
+        r.raise_for_status()
+        return r.json()
+
+    try:
+        alias_result = _get(f"firewall/alias/getAliasUUID/{OPNSENSE_ALIAS_NAME}")
+        alias_uuid = alias_result.get('uuid')
+
+        if not alias_uuid:
+            create_result = _post("firewall/alias/addItem", {
+                "alias": {
+                    "name":        OPNSENSE_ALIAS_NAME,
+                    "type":        "host",
+                    "content":     ip,
+                    "description": f"Mylo IPS blocklist — {raison}"
+                }
+            })
+            alias_uuid = create_result.get('uuid')
+        else:
+            alias_data    = _get(f"firewall/alias/getItem/{alias_uuid}")
+            content_actuel = alias_data.get('alias', {}).get('content', {})
+            ips_actuelles = [
+                v.get('value', '')
+                for v in content_actuel.values()
+                if isinstance(v, dict)
+            ] if isinstance(content_actuel, dict) else []
+
+            if ip in ips_actuelles:
+                return {'success': True, 'message': f'{ip} déjà dans la blocklist', 'already_blocked': True}
+
+            ips_actuelles.append(ip)
+            _post(f"firewall/alias/setItem/{alias_uuid}", {
+                "alias": {
+                    "name":        OPNSENSE_ALIAS_NAME,
+                    "type":        "host",
+                    "content":     "\n".join(ips_actuelles),
+                    "description": "Mylo IPS blocklist"
+                }
+            })
+
+        _post("firewall/alias/reconfigure")
+        _post("firewall/filter/apply")
+
+        return {'success': True, 'message': f'IP {ip} bloquée sur OPNsense (via agent capture)', 'ip': ip}
+
+    except requests.exceptions.ConnectionError:
+        return {'success': False, 'message': f'OPNsense inaccessible depuis l\'agent — vérifie {OPNSENSE_URL}'}
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'OPNsense timeout depuis l\'agent'}
+    except Exception as e:
+        return {'success': False, 'message': f'Erreur OPNsense: {e}'}
+
+
 # ─── Mini serveur HTTP — token live + découverte réseau (stdlib uniquement) ──
 class TokenUpdateHandler(BaseHTTPRequestHandler):
     """
@@ -265,6 +350,8 @@ class TokenUpdateHandler(BaseHTTPRequestHandler):
       (après login TOTP) sans avoir à redémarrer le container de capture.
     - POST /discover/ pour que Django délègue la découverte réseau (ARP/Nmap)
       à l'agent, qui lui est bien sur le réseau local de la cible.
+    - POST /block-ip/ pour que Django délègue le blocage OPNsense à l'agent,
+      qui lui est bien sur le réseau local d'OPNsense.
     """
 
     def log_message(self, format, *args):
@@ -343,6 +430,33 @@ class TokenUpdateHandler(BaseHTTPRequestHandler):
             self._send_json(200, {'devices': devices})
             try:
                 print(f"  🔍 Découverte réseau via /discover/ — {len(devices)} hôte(s) sur {cidr}")
+            except Exception:
+                pass
+            return
+
+        if path == '/block-ip':
+            if not self._check_secret():
+                return
+            try:
+                data = self._read_json_body()
+                ip   = data.get('ip')
+            except Exception:
+                self._send_json(400, {'error': 'invalid JSON'})
+                return
+
+            if not ip:
+                self._send_json(400, {'error': 'ip requis'})
+                return
+            try:
+                ipaddress.ip_address(ip)
+            except ValueError:
+                self._send_json(400, {'error': 'ip invalide'})
+                return
+
+            result = opnsense_block_ip(ip)
+            self._send_json(200 if result.get('success') else 502, result)
+            try:
+                print(f"  🛑 Blocage IP via /block-ip/ — {ip}: {result.get('message')}")
             except Exception:
                 pass
             return

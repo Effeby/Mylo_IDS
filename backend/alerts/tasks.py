@@ -62,6 +62,11 @@ def poll_wazuh_alerts():
             )
             dst_ip = data_field.get('dstip') or data_field.get('dst_ip') or '172.16.1.1'
 
+            # IP whitelistée (src ou dst) → on ignore silencieusement, pas de save BD.
+            from .models import WhitelistedIP
+            if WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists():
+                continue
+
             traffic = {
                 'src_ip':         src_ip,
                 'dst_ip':         dst_ip,
