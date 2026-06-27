@@ -166,8 +166,11 @@ function Layout({ children }) {
   const mainRef  = useRef(null)
   const location = useLocation()
 
-  // Pages sans sidebar
-  const noSidebar = ['/', '/onboarding', '/register', '/totp-setup', '/totp-verify', '/password-change', '/404'].includes(location.pathname)
+  // Sidebar affichée uniquement sur les pages privées connues. Tout le reste
+  // (login, onboarding, 404, ou n'importe quelle route inconnue qui tombe sur
+  // la route catch-all "*") s'affiche en plein écran, sans menu.
+  const PRIVATE_PATHS = ['/dashboard', '/monitor', '/alerts', '/stats', '/settings', '/audit', '/behavior', '/correlation']
+  const noSidebar = !PRIVATE_PATHS.includes(location.pathname)
 
 
   useGlobalAlertSound()
