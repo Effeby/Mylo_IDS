@@ -193,7 +193,7 @@ def get_token():
     try:
         r = requests.post(f'{DJANGO_URL}/api/auth/login/', json={
             'username': username, 'password': password
-        }, timeout=5)
+        }, timeout=10)
         if r.ok:
             AUTH_TOKEN = r.json().get('access')
             AUTH_USER  = username
@@ -677,7 +677,7 @@ def river_learn(features: dict, true_label: str):
             f'{DJANGO_URL}/api/actions/river/learn/',
             json={'features': clean, 'true_label': true_label},
             headers=get_headers(),
-            timeout=3
+            timeout=10
         )
         if r.status_code == 200:
             result = r.json()
@@ -709,7 +709,7 @@ def send_flows():
         try:
             phase_resp = requests.get(
                 f'{DJANGO_URL}/api/alerts/baseline/phase/',
-                headers=get_headers(), timeout=3
+                headers=get_headers(), timeout=10
             )
             phase_data        = phase_resp.json() if phase_resp.ok else {}
             phase_actuelle    = phase_data.get('phase', 'production')
@@ -746,7 +746,7 @@ def send_flows():
                     f'{DJANGO_URL}/api/alerts/analyze/',
                     json=payload,
                     headers=get_headers(),
-                    timeout=3
+                    timeout=10
                 )
                 if r.status_code == 401:
                     get_token()
