@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, Outle
 
 import { useState, useRef, useEffect } from 'react'
 import { ChevronUp, Menu } from 'lucide-react'
-import Sidebar, { SIDEBAR_WIDTH } from './components/Sidebar'
+import Sidebar, { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './components/Sidebar'
 import CopilotChat from './components/CopilotChat'
 import Login from './pages/Login'
 import Monitor from './pages/Monitor'
@@ -215,25 +215,26 @@ function Layout({ children }) {
 
   if (noSidebar) return children
 
-  // Desktop : la sidebar est repliée via un wrapper qui réduit sa largeur à 0
-  // et masque le débordement — on cache ainsi tout le menu (pas juste une
-  // version réduite), exactement comme demandé ("la cacher ou l'afficher").
+  // Desktop : le repli réduit la sidebar à une largeur "rail" (icônes seules,
+  // cf. Sidebar.jsx) plutôt que de la masquer entièrement.
   // Mobile : la sidebar est position:fixed (cf. Sidebar.jsx) et ne prend donc
   // aucune place dans le flux, le wrapper peut rester à largeur 0.
-  const desktopWrapperWidth = isMobile ? 0 : (collapsed ? 0 : SIDEBAR_WIDTH)
+  const desktopWrapperWidth = isMobile ? 0 : (collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH)
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#0A0E1A' }}>
       <div style={{
         flexShrink: 0, height: '100vh', overflow: 'hidden',
         width: desktopWrapperWidth,
-        transition: 'width 0.22s ease',
+        transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
         <Sidebar
           onCopilot={() => setCopilotOpen(!copilotOpen)}
           isMobile={isMobile}
           mobileOpen={mobileOpen}
           onCloseMobile={() => setMobileOpen(false)}
+          collapsed={collapsed}
+          onToggleCollapse={toggleSidebar}
         />
       </div>
 
@@ -241,33 +242,37 @@ function Layout({ children }) {
         <div className="mylo-sidebar-backdrop" onClick={() => setMobileOpen(false)} />
       )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Barre fixe contenant le bouton menu — fait partie du flux normal,
-            ne chevauche donc jamais le contenu des pages (contrairement à un
-            bouton flottant en position:fixed). */}
-        <div style={{
-          flexShrink: 0, height: 44, display: 'flex', alignItems: 'center',
-          padding: '0 12px', borderBottom: '1px solid #1E2D4F', background: '#0A0E1A',
-        }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
+        {/* Bouton menu mobile — flottant dans le coin de la page, pas de barre dédiée
+            (le repli/dépli desktop se fait directement depuis la Sidebar). */}
+        {isMobile && (
           <button
             onClick={toggleSidebar}
-            aria-label="Afficher/masquer le menu"
-            title="Afficher/masquer le menu"
+            aria-label="Afficher le menu"
+            title="Afficher le menu"
             style={{
-              width: 32, height: 32, borderRadius: 8,
-              border: '1px solid #1E2D4F', background: '#0F1629',
+              position: 'absolute', top: 14, left: 14, zIndex: 50,
+              width: 36, height: 36, borderRadius: 10,
+              border: '1px solid #1E2D4F', background: 'rgba(15,22,41,0.85)',
+              backdropFilter: 'blur(6px)',
               color: '#94A3B8', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+              transition: 'background 0.18s, color 0.18s',
             }}
           >
-            <Menu size={17} />
+            <Menu size={18} />
           </button>
-        </div>
+        )}
 
         <main
           ref={mainRef}
           onScroll={handleScroll}
-          style={{ flex: 1, overflowY: 'auto', position: 'relative', minWidth: 0 }}
+          style={{
+            flex: 1, overflowY: 'auto', position: 'relative', minWidth: 0,
+            background: 'radial-gradient(circle at 0% 0%, rgba(59,130,246,0.07), transparent 45%), ' +
+                        'radial-gradient(circle at 100% 100%, rgba(59,130,246,0.04), transparent 50%), #0A0E1A',
+          }}
         >
           {children}
           {showScrollTop && (
@@ -279,8 +284,11 @@ function Layout({ children }) {
                 border: '1px solid #1E2D4F', background: '#0F1629',
                 color: '#94A3B8', cursor: 'pointer', fontSize: 12, fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 6,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                boxShadow: '0 6px 24px rgba(0,0,0,0.45)',
+                transition: 'transform 0.18s, box-shadow 0.18s',
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
             >
               <ChevronUp size={14} /> Retour en haut
             </button>

@@ -33,7 +33,8 @@ ENV_FILE   = BASE_DIR / ".env.capture"
 
 DJANGO_URL     = os.environ.get("MYLO_DJANGO_URL", "http://localhost:8001")
 _ifaces_raw    = os.environ.get("CAPTURE_IFACE", "enp0s3")
-CAPTURE_IFACES = [i.strip() for i in _ifaces_raw.split(",")]
+# wg0 = interface WireGuard VPN — trafic chiffré, jamais capturé (voir filtre port 51820 plus bas).
+CAPTURE_IFACES = [i.strip() for i in _ifaces_raw.split(",") if i.strip().lower() != "wg0"]
 WINDOW_SEC     = 2
 RIVER_AUTO_LEARN_THRESHOLD = 0.70
 
@@ -720,6 +721,11 @@ def send_flows():
 
         for key, flow in current_flows.items():
             if flow['count'] < 2:
+                continue
+
+            # Trafic WireGuard VPN (port 51820) : chiffré, inanalysable au niveau
+            # applicatif → faux positifs systématiques. On l'ignore silencieusement.
+            if flow['src_port'] == 51820 or flow['dst_port'] == 51820:
                 continue
 
             features = flow_to_features(flow)
