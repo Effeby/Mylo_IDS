@@ -27,3 +27,75 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* ─── Responsive utilities ────────────────────────────────────────────── */
+
+/* Page container — padding shrinks smoothly on narrow viewports instead of a hard breakpoint */
+.mylo-page {
+  padding: clamp(14px, 4vw, 32px);
+}
+
+/* Card/KPI grids — auto-fit reflows columns based on available width, no JS needed */
+.mylo-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* Two/three column layouts (charts, forms) — collapse to a single column on small screens */
+.mylo-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+}
+.mylo-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 860px) {
+  .mylo-grid-2, .mylo-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* Generic responsive grid — pass any column ratio via the --cols custom
+   property (inline style), always collapses to a single column under 860px.
+   Used wherever a grid has an asymmetric ratio (e.g. "1fr 1.5fr"). */
+.mylo-grid-responsive {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr);
+}
+@media (max-width: 860px) {
+  .mylo-grid-responsive { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 560px) {
+  .mylo-grid-cards { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+
+/* Fixed-column "table" grids — scroll horizontally on mobile rather than crushing columns */
+.mylo-table-scroll {
+  overflow-x: auto;
+}
+.mylo-table-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+/* Modals/side panels/floating widgets — never exceed the viewport width */
+.mylo-modal,
+.mylo-panel,
+.mylo-floating {
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+}
+
+/* Sidebar drawer overlay (mobile) */
+.mylo-sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 998;
+}
+
+@media (max-width: 900px) {
+  .mylo-hide-mobile { display: none !important; }
+}
+@media (min-width: 901px) {
+  .mylo-hide-desktop { display: none !important; }
+}

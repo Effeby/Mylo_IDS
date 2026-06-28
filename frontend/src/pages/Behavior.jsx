@@ -88,10 +88,10 @@ export default function Behavior() {
   }
 
   return (
-    <div style={{ padding: 32, color: '#F8FAFC' }}>
+    <div className="mylo-page" style={{ color: '#F8FAFC' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg,#A855F7,#7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Brain size={22} color="#fff" />
@@ -110,7 +110,7 @@ export default function Behavior() {
 
       {/* KPIs */}
       {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 24 }}>
+        <div className="mylo-grid-cards" style={{ gap: 12, marginBottom: 24 }}>
           {[
             { label: 'IPs profilées',    value: stats.total_ips,       color: '#3B82F6' },
             { label: 'Suspectes',        value: stats.suspicious_ips,   color: '#EF4444' },
@@ -134,7 +134,7 @@ export default function Behavior() {
       </div>
 
       {/* Filtres */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <button onClick={() => setFilter(p => ({...p, suspicious: !p.suspicious}))} style={{
           padding: '7px 14px', borderRadius: 8, border: `1px solid ${filter.suspicious ? '#EF4444' : '#1E2D4F'}`,
           background: filter.suspicious ? 'rgba(239,68,68,0.1)' : 'transparent',
@@ -152,7 +152,8 @@ export default function Behavior() {
       </div>
 
       {/* Table */}
-      <div style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12, overflow: 'hidden' }}>
+      <div className="mylo-table-scroll" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12 }}>
+        <div style={{ minWidth: 900 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '160px 100px 120px 100px 100px 120px 80px 40px', padding: '12px 20px', borderBottom: '1px solid #1E2D4F', fontSize: 11, color: '#475569', fontWeight: 700, letterSpacing: '0.05em' }}>
           <span>IP</span><span>TYPE</span><span>SCORE</span><span>FLUX</span><span>ATTAQUES</span><span>DERNIÈRE ANOMALIE</span><span>BASELINE</span><span></span>
         </div>
@@ -225,7 +226,7 @@ export default function Behavior() {
                   ) : (
                     <div>
                       {/* Stats comportementales */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 16 }}>
+                      <div className="mylo-grid-cards" style={{ gap: 16, marginBottom: 16 }}>
                         {[
                           ['Bytes/flux moyen', `${d.avg_bytes_per_flow?.toLocaleString()} B`],
                           ['Durée moyenne',    `${d.avg_duration?.toFixed(3)} s`],
@@ -279,6 +280,7 @@ export default function Behavior() {
             </div>
           )
         })}
+        </div>
       </div>
     </div>
   )

@@ -76,16 +76,20 @@ class Alert(models.Model):
     action_taken = models.CharField(max_length=100, blank=True)
     # Source of the alert (e.g. 'scapy', 'wazuh') — helps identify origin
     source = models.CharField(max_length=20, default='scapy')
- 
+    # _id du document OpenSearch d'origine (alertes Wazuh uniquement) —
+    # permet de dédupliquer le polling sans recréer la même alerte.
+    wazuh_alert_id = models.CharField(max_length=100, null=True, blank=True)
+
     detected_at = models.DateTimeField(auto_now_add=True)
     updated_at  = models.DateTimeField(auto_now=True)
- 
+
     class Meta:
         ordering = ['-detected_at']
         indexes  = [
             models.Index(fields=['organisation', '-detected_at']),
             models.Index(fields=['organisation', 'is_attack']),
         ]
+        unique_together = ('organisation', 'wazuh_alert_id')
  
     def __str__(self):
         asset_label = f" {self.asset_name}" if self.asset_name else ''

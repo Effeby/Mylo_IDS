@@ -51,7 +51,7 @@ export default function SetupTOTP() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0A0E1A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 520, padding: 32, borderRadius: 20, background: '#0F1629', border: '1px solid #1E2D4F' }}>
+      <div style={{ width: '100%', maxWidth: 520, padding: 'clamp(18px, 6vw, 32px)', borderRadius: 20, background: '#0F1629', border: '1px solid #1E2D4F', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ width: 64, height: 64, margin: '0 auto 16px', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #3B82F6, #1E40AF)' }}>
             <Shield size={28} color="#fff" />
@@ -77,9 +77,9 @@ export default function SetupTOTP() {
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'inline-block', padding: 18, borderRadius: 24, background: '#0A0E1A', border: '1px solid #1E2D4F' }}>
                 {qrCode ? (
-                  <img src={qrCode} alt="QR Code TOTP" style={{ width: 240, height: 240, display: 'block' }} />
+                  <img src={qrCode} alt="QR Code TOTP" style={{ width: 240, maxWidth: '100%', height: 'auto', display: 'block' }} />
                 ) : (
-                  <div style={{ width: 240, height: 240, display: 'grid', placeItems: 'center', color: '#64748B', background: '#081020', borderRadius: 16 }}>QR code indisponible</div>
+                  <div style={{ width: 240, maxWidth: '100%', height: 240, display: 'grid', placeItems: 'center', color: '#64748B', background: '#081020', borderRadius: 16 }}>QR code indisponible</div>
                 )}
               </div>
             </div>

@@ -74,11 +74,11 @@ export default function Dashboard() {
   const newAlerts  = stats?.new_alerts || 0
 
   return (
-    <div style={{ padding:32, color:'#F8FAFC' }}>
+    <div className="mylo-page" style={{ color:'#F8FAFC' }}>
 
       {/* ── Header ── */}
       <div style={{ marginBottom:28 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:6 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:6, flexWrap:'wrap' }}>
           <div style={{
             width:42, height:42, borderRadius:10,
             background:'linear-gradient(135deg,#3B82F6,#1E40AF)',
@@ -96,7 +96,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── KPI Row ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:20 }}>
+      <div className="mylo-grid-cards" style={{ gap:16, marginBottom:20 }}>
         {[
           { label:'Flux analysés',    value:total.toLocaleString(),   color:'#3B82F6', icon:Activity },
           { label:'Alertes',         value:attacks.toLocaleString(), color:'#EF4444', icon:AlertTriangle },
@@ -142,7 +142,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Statut système ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, marginBottom:20 }}>
+      <div className="mylo-grid-3" style={{ gap:16, marginBottom:20 }}>
 
         {/* Mylo IPS */}
         <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
@@ -233,7 +233,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Répartition types + Dernières alertes ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1.5fr', gap:16, marginBottom:20 }}>
+      <div className="mylo-grid-responsive" style={{ '--cols': '1fr 1.5fr', gap:16, marginBottom:20 }}>
 
         {/* Types d'attaques */}
         <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>

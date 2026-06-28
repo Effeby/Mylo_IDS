@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, RefreshCw, Shield, Zap, Brain, Bell, AlertTriangle, Building2, Users, Plus, Trash2, Edit2, X, Check, Lock, Unlock } from 'lucide-react'
+import { Save, RefreshCw, Shield, Zap, Brain, Bell, AlertTriangle, Building2, Users, Plus, Trash2, Edit2, X, Check, Lock, Unlock, Flame } from 'lucide-react'
 
 const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
@@ -137,13 +137,13 @@ function AddMemberModal({ onClose, onAdd }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 32, width: 500, maxHeight: '90vh', overflowY: 'auto' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}>
+      <div className="mylo-modal" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(18px, 5vw, 32px)', width: 500, maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Ajouter un membre</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={18} /></button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="mylo-grid-2" style={{ gap: 12 }}>
           <Input label="Prénom" value={form.first_name} onChange={v => set('first_name', v)} placeholder="Jean" />
           <Input label="Nom" value={form.last_name} onChange={v => set('last_name', v)} placeholder="Dupont" />
         </div>
@@ -201,13 +201,13 @@ function EditMemberModal({ member, onClose, onSave }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 32, width: 480 }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}>
+      <div className="mylo-modal" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(18px, 5vw, 32px)', width: 480, maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Modifier {member.fullname || member.username}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={18} /></button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="mylo-grid-2" style={{ gap: 12 }}>
           <Input label="Prénom"     value={form.first_name} onChange={v => set('first_name', v)} />
           <Input label="Nom"        value={form.last_name}  onChange={v => set('last_name', v)} />
         </div>
@@ -294,6 +294,7 @@ export default function Settings() {
   const currentUser = (() => { try { return JSON.parse(localStorage.getItem('mylo_user') || '{}') } catch { return {} } })()
   const canManageUsers = currentUser?.permissions?.can_manage_users
   const canConfigureIDS = currentUser?.permissions?.can_configure_ids
+  const isOrgAdmin = currentUser?.role === 'org_admin' || currentUser?.role === 'super_admin'
 
   const load = async () => {
     setLoading(true)
@@ -414,10 +415,10 @@ export default function Settings() {
   if (error && !cfg) return <div style={{ padding: 32, color: '#EF4444' }}>{error}</div>
 
   return (
-    <div style={{ padding: 32, color: '#F8FAFC', maxWidth: 860 }}>
+    <div className="mylo-page" style={{ color: '#F8FAFC', maxWidth: 860 }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800 }}>Paramètres</h1>
           <p style={{ margin: 0, color: '#94A3B8', fontSize: 13 }}>
@@ -425,7 +426,7 @@ export default function Settings() {
             {cfg?.updated_at && <span style={{ marginLeft: 12, color: '#334155' }}>· Mis à jour {new Date(cfg.updated_at).toLocaleString('fr-FR')}{cfg.updated_by && ` par ${cfg.updated_by}`}</span>}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={load} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #1E2D4F', background: 'transparent', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
             <RefreshCw size={14} /> Réinitialiser
           </button>
@@ -438,7 +439,7 @@ export default function Settings() {
       {error && <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 16, background: 'rgba(239,68,68,0.1)', border: '1px solid #EF4444', color: '#EF4444', fontSize: 13 }}>⚠️ {error}</div>}
 
       <Section icon={Shield} title="Wazuh" color="#8B5CF6">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center' }}>
+        <div className="mylo-grid-responsive" style={{ '--cols': '1fr auto', gap: 16, alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: wazuhStatus.connected ? '#22C55E' : '#F97316' }} />
@@ -471,7 +472,7 @@ export default function Settings() {
       {/* ── Organisation ── */}
       {org && canManageUsers && (
         <Section icon={Building2} title="Organisation" color="#22C55E">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="mylo-grid-2" style={{ gap: 16 }}>
             <Input label="Nom de l'organisation" value={org.name || ''} onChange={v => setOrgField('name', v)} placeholder="Acme Corp" />
             <Input label="Email de contact" type="email" value={org.email || ''} onChange={v => setOrgField('email', v)} placeholder="soc@entreprise.com" />
             <Input label="Téléphone" value={org.phone || ''} onChange={v => setOrgField('phone', v)} placeholder="+225 00 00 00 00" />
@@ -485,7 +486,7 @@ export default function Settings() {
             </select>
           </div>
           {/* Infos lecture seule */}
-          <div style={{ display: 'flex', gap: 16, padding: '10px 0', borderTop: '1px solid #1E2D4F', marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 16, padding: '10px 0', borderTop: '1px solid #1E2D4F', marginTop: 8, flexWrap: 'wrap' }}>
             {[
               { label: 'Plan', value: org.plan?.toUpperCase() },
               { label: 'Membres', value: org.members_count },
@@ -505,7 +506,7 @@ export default function Settings() {
         <Section icon={Users} title="Équipe SOC" color="#A855F7">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
             {members.map(m => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 10, background: '#0A0E1A', border: '1px solid #1E2D4F' }}>
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 10, background: '#0A0E1A', border: '1px solid #1E2D4F', flexWrap: 'wrap' }}>
                 {/* Avatar initiales */}
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${ROLE_COLORS[m.role] || '#3B82F6'}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: ROLE_COLORS[m.role] || '#3B82F6', flexShrink: 0 }}>
                   {(m.fullname || m.username)[0].toUpperCase()}
@@ -581,7 +582,7 @@ export default function Settings() {
           <p style={{ fontSize: 12, color: '#475569', marginTop: 0, marginBottom: 16 }}>
             Plus le seuil est bas, plus Mylo est sensible pour cette classe.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 32px' }}>
+          <div className="mylo-grid-2" style={{ gap: '0 32px' }}>
             {Object.entries(cfg.thresholds || {}).map(([cls, val]) => (
               <Slider key={cls} label={cls} value={val} min={0.05} max={0.95} step={0.01}
                 onChange={v => setThreshold(cls, v)} format={v => `${(v * 100).toFixed(0)}%`}
@@ -603,6 +604,22 @@ export default function Settings() {
               onChange={v => set('auto_block_duration', v)}
               format={v => { const h = Math.floor(v/3600); const m = Math.floor((v%3600)/60); return h > 0 ? `${h}h${m > 0 ? m+'m':''}` : `${m}m` }}
               color="#F97316" />
+          </div>
+        </Section>
+      )}
+
+      {/* ── OPNsense ── */}
+      {isOrgAdmin && cfg && (
+        <Section icon={Flame} title="Configuration OPNsense" color="#0EA5E9">
+          <Toggle label="OPNsense activé" desc="Active le blocage automatique des IP via le firewall OPNsense"
+            value={cfg.opnsense_enabled} onChange={v => set('opnsense_enabled', v)} />
+          <div style={{ marginTop: 16 }}>
+            <Input label="URL OPNsense" value={cfg.opnsense_url || ''}
+              onChange={v => set('opnsense_url', v)} placeholder="https://172.16.1.1" />
+            <Input label="Clé API" type="password" value={cfg.opnsense_api_key || ''}
+              onChange={v => set('opnsense_api_key', v)} placeholder="Clé API OPNsense" />
+            <Input label="Secret API" type="password" value={cfg.opnsense_api_secret || ''}
+              onChange={v => set('opnsense_api_secret', v)} placeholder="Secret API OPNsense" />
           </div>
         </Section>
       )}
@@ -775,8 +792,8 @@ export default function Settings() {
             {assets.map(asset => (
               <div key={asset.id} style={{ padding: 16, borderRadius: 12, border: `1px solid ${asset.is_authorized ? '#1E2D4F' : '#EF444440'}`, background: '#0A0E1A' }}>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     {/* Nom editable */}
                     {editingAssetId === asset.id ? (
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -809,7 +826,7 @@ export default function Settings() {
                       {asset.ip_address} · {asset.mac_address || 'MAC inconnue'} · {asset.os_type || 'OS inconnu'}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     {/* Criticité 1-4 */}
                     <span style={{
                       padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
@@ -846,7 +863,7 @@ export default function Settings() {
                 )}
 
                 {/* Actions */}
-                <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
                   <button
                     onClick={() => updateAsset(asset.id, { is_authorized: !asset.is_authorized })}
                     style={{
@@ -893,7 +910,7 @@ export default function Settings() {
       )}
       {/* Toast notification */}
       {toast && (
-        <div style={{
+        <div className="mylo-floating" style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
           zIndex: 3000, padding: '12px 24px', borderRadius: 10,
           background: toast.type === 'error' ? '#EF4444' : '#22C55E',

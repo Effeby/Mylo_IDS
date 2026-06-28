@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom'
 
 import { useState, useRef, useEffect } from 'react'
-import { ChevronUp } from 'lucide-react'
-import Sidebar from './components/Sidebar'
+import { ChevronUp, Menu } from 'lucide-react'
+import Sidebar, { SIDEBAR_WIDTH } from './components/Sidebar'
 import CopilotChat from './components/CopilotChat'
 import Login from './pages/Login'
 import Monitor from './pages/Monitor'
@@ -158,13 +158,32 @@ function AuthGuard() {
 }
 
 
+const MOBILE_BREAKPOINT = 900
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= MOBILE_BREAKPOINT : false
+  )
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  return isMobile
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 function Layout({ children }) {
 
   const [copilotOpen, setCopilotOpen]     = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('mylo_sidebar_collapsed') === 'true'
+  )
+  const [mobileOpen, setMobileOpen] = useState(false)
   const mainRef  = useRef(null)
   const location = useLocation()
+  const isMobile = useIsMobile()
 
   // Sidebar affichée uniquement sur les pages privées connues. Tout le reste
   // (login, onboarding, 404, ou n'importe quelle route inconnue qui tombe sur
@@ -175,39 +194,99 @@ function Layout({ children }) {
 
   useGlobalAlertSound()
 
+  // Ferme le tiroir mobile à chaque changement de page.
+  useEffect(() => { setMobileOpen(false) }, [location.pathname])
+
   const handleScroll = () => {
     if (mainRef.current) setShowScrollTop(mainRef.current.scrollTop > 300)
   }
 
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileOpen(o => !o)
+    } else {
+      setCollapsed(c => {
+        const next = !c
+        localStorage.setItem('mylo_sidebar_collapsed', String(next))
+        return next
+      })
+    }
+  }
+
   if (noSidebar) return children
+
+  // Desktop : la sidebar est repliée via un wrapper qui réduit sa largeur à 0
+  // et masque le débordement — on cache ainsi tout le menu (pas juste une
+  // version réduite), exactement comme demandé ("la cacher ou l'afficher").
+  // Mobile : la sidebar est position:fixed (cf. Sidebar.jsx) et ne prend donc
+  // aucune place dans le flux, le wrapper peut rester à largeur 0.
+  const desktopWrapperWidth = isMobile ? 0 : (collapsed ? 0 : SIDEBAR_WIDTH)
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#0A0E1A' }}>
-      <div style={{ flexShrink: 0, height: '100vh' }}>
-        <Sidebar onCopilot={() => setCopilotOpen(!copilotOpen)} />
+      <div style={{
+        flexShrink: 0, height: '100vh', overflow: 'hidden',
+        width: desktopWrapperWidth,
+        transition: 'width 0.22s ease',
+      }}>
+        <Sidebar
+          onCopilot={() => setCopilotOpen(!copilotOpen)}
+          isMobile={isMobile}
+          mobileOpen={mobileOpen}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
       </div>
-      <main
-        ref={mainRef}
-        onScroll={handleScroll}
-        style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative' }}
-      >
-        {children}
-        {showScrollTop && (
+
+      {isMobile && mobileOpen && (
+        <div className="mylo-sidebar-backdrop" onClick={() => setMobileOpen(false)} />
+      )}
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Barre fixe contenant le bouton menu — fait partie du flux normal,
+            ne chevauche donc jamais le contenu des pages (contrairement à un
+            bouton flottant en position:fixed). */}
+        <div style={{
+          flexShrink: 0, height: 44, display: 'flex', alignItems: 'center',
+          padding: '0 12px', borderBottom: '1px solid #1E2D4F', background: '#0A0E1A',
+        }}>
           <button
-            onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={toggleSidebar}
+            aria-label="Afficher/masquer le menu"
+            title="Afficher/masquer le menu"
             style={{
-              position: 'fixed', bottom: 28, right: 28, zIndex: 999,
-              padding: '8px 18px', borderRadius: 24,
+              width: 32, height: 32, borderRadius: 8,
               border: '1px solid #1E2D4F', background: '#0F1629',
-              color: '#94A3B8', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 6,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              color: '#94A3B8', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <ChevronUp size={14} /> Retour en haut
+            <Menu size={17} />
           </button>
-        )}
-      </main>
+        </div>
+
+        <main
+          ref={mainRef}
+          onScroll={handleScroll}
+          style={{ flex: 1, overflowY: 'auto', position: 'relative', minWidth: 0 }}
+        >
+          {children}
+          {showScrollTop && (
+            <button
+              onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+              style={{
+                position: 'fixed', bottom: 28, right: 28, zIndex: 999,
+                padding: '8px 18px', borderRadius: 24,
+                border: '1px solid #1E2D4F', background: '#0F1629',
+                color: '#94A3B8', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              }}
+            >
+              <ChevronUp size={14} /> Retour en haut
+            </button>
+          )}
+        </main>
+      </div>
       {copilotOpen && (
         <CopilotChat
           onClose={() => setCopilotOpen(false)}

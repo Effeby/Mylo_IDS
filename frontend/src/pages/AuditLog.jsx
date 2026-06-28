@@ -76,10 +76,10 @@ export default function AuditLog() {
   }
 
   return (
-    <div style={{ padding: 32, color: '#F8FAFC' }}>
+    <div className="mylo-page" style={{ color: '#F8FAFC' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg,#F97316,#EA580C)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Shield size={22} color="#fff" />
@@ -95,7 +95,7 @@ export default function AuditLog() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
+      <div className="mylo-grid-cards" style={{ gap: 12, marginBottom: 20 }}>
         {[
           { label: 'Total actions', value: stats.total,  color: '#3B82F6' },
           { label: 'Connexions',    value: stats.logins,  color: '#22C55E' },
@@ -110,7 +110,7 @@ export default function AuditLog() {
       </div>
 
       {/* Filtres */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <select value={filter.action} onChange={e => setFilter(p => ({...p, action: e.target.value}))}
           style={{ padding: '8px 12px', borderRadius: 8, background: '#0F1629', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 13 }}>
           <option value="">Toutes les actions</option>
@@ -132,7 +132,8 @@ export default function AuditLog() {
       {error && <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#EF4444', fontSize: 13, marginBottom: 12 }}>⚠️ {error}</div>}
 
       {/* Table */}
-      <div style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12, overflow: 'hidden' }}>
+      <div className="mylo-table-scroll" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12 }}>
+        <div style={{ minWidth: 1000 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '150px 130px 1fr 280px 130px 110px 40px', padding: '12px 20px', borderBottom: '1px solid #1E2D4F', fontSize: 11, color: '#475569', fontWeight: 700, letterSpacing: '0.05em' }}>
           <span>HORODATAGE</span><span>UTILISATEUR</span><span>ACTION</span><span>DESCRIPTION</span><span>IP SOURCE</span><span>STATUT</span><span></span>
         </div>
@@ -178,7 +179,7 @@ export default function AuditLog() {
               </div>
               {isOpen && (
                 <div style={{ padding: '16px 20px', background: '#0A0E1A', borderBottom: '1px solid #1E2D4F' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
+                  <div className="mylo-grid-cards" style={{ gap: 16 }}>
                     {[['Organisation',log.organisation||'—'],['Méthode HTTP',log.method||'—'],['Endpoint',log.endpoint||'—'],['Code HTTP',log.status_code||'—'],['Type objet',log.object_type||'—'],['Objet',log.object_repr||'—'],['Description',log.description||'—']].map(([label,value]) => (
                       <div key={label}>
                         <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, marginBottom: 3, textTransform: 'uppercase' }}>{label}</div>
@@ -191,6 +192,7 @@ export default function AuditLog() {
             </div>
           )
         })}
+        </div>
       </div>
     </div>
   )

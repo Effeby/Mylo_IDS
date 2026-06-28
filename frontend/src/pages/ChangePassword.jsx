@@ -71,7 +71,7 @@ export default function ChangePassword() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0A0E1A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 480, padding: 32, borderRadius: 20, background: '#0F1629', border: '1px solid #1E2D4F' }}>
+      <div style={{ width: '100%', maxWidth: 480, padding: 'clamp(18px, 6vw, 32px)', borderRadius: 20, background: '#0F1629', border: '1px solid #1E2D4F', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ width: 64, height: 64, margin: '0 auto 16px', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #3B82F6, #1E40AF)' }}>
             <Shield size={28} color="#fff" />

@@ -44,8 +44,8 @@ const BASELINE_DURATIONS = [
 ]
 
 const S = {
-  page:    { minHeight: '100vh', background: '#070B14', color: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  card:    { width: '100%', maxWidth: 720, background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 40 },
+  page:    { minHeight: '100vh', background: '#070B14', color: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  card:    { width: '100%', maxWidth: 720, background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(20px, 6vw, 40px)', boxSizing: 'border-box' },
   input:   { width: '100%', padding: '10px 14px', borderRadius: 8, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 14, outline: 'none', boxSizing: 'border-box' },
   label:   { fontSize: 12, color: '#94A3B8', fontWeight: 600, marginBottom: 6, display: 'block', letterSpacing: '0.05em' },
   btn:     { padding: '12px 24px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 },
@@ -220,7 +220,7 @@ export default function Onboarding({ authToken, onComplete }) {
             Configurons maintenant votre réseau surveillé.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="mylo-grid-2" style={{ gap: 16 }}>
             <Field label="NOM DU RÉSEAU *">
               <input style={S.input} placeholder="Ex: Réseau HQ Abidjan"
                 value={network.network_name} onChange={e => setNetwork(p => ({...p, network_name: e.target.value}))} />
@@ -231,7 +231,7 @@ export default function Onboarding({ authToken, onComplete }) {
             </Field>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="mylo-grid-2" style={{ gap: 16 }}>
             <Field label="LATITUDE" desc="Trouvez sur latlong.net">
               <input style={S.input} type="number" placeholder="5.3600"
                 value={network.network_latitude} onChange={e => setNetwork(p => ({...p, network_latitude: e.target.value}))} />
@@ -243,7 +243,7 @@ export default function Onboarding({ authToken, onComplete }) {
           </div>
 
           <Field label="MODE DE DÉPLOIEMENT">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="mylo-grid-2" style={{ gap: 10 }}>
               {DEPLOY_MODES.map(m => (
                 <div key={m.value} onClick={() => setNetwork(p => ({...p, deploy_mode: m.value}))}
                   style={{
@@ -262,7 +262,7 @@ export default function Onboarding({ authToken, onComplete }) {
           {/* VLANs */}
           <Field label="SEGMENTS RÉSEAU / VLANs">
             {network.vlans.map((v, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+              <div key={i} className="mylo-grid-responsive" style={{ '--cols': '2fr 2fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'center' }}>
                 <input style={S.input} placeholder="Nom (ex: VLAN Serveurs)"
                   value={v.name} onChange={e => {
                     const vlans = [...network.vlans]
@@ -333,7 +333,7 @@ export default function Onboarding({ authToken, onComplete }) {
           </Field>
 
           <Field label="DURÉE DE LA PHASE DE BASELINE" desc="Pendant cette période, Mylo apprend le comportement normal de votre réseau avant d'alerter.">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+            <div className="mylo-grid-3" style={{ gap: 10 }}>
               {BASELINE_DURATIONS.map(d => (
                 <div key={d.value} onClick={() => setIdsConfig(p => ({...p, baseline_days: d.value}))}
                   style={{
@@ -420,7 +420,7 @@ export default function Onboarding({ authToken, onComplete }) {
           </Field>
 
           <Field label="SÉVÉRITÉ MINIMALE POUR NOTIFIER">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+            <div className="mylo-grid-3" style={{ gap: 10 }}>
               {[['CRITICAL','🔴','#EF4444'],['HIGH','🟠','#F97316'],['MEDIUM','🟡','#EAB308']].map(([val,icon,color]) => (
                 <div key={val} onClick={() => setNotifs(p => ({...p, notif_min_severity: val}))}
                   style={{
@@ -456,7 +456,7 @@ export default function Onboarding({ authToken, onComplete }) {
                   </button>
                 )}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="mylo-grid-2" style={{ gap: 10 }}>
                 <Field label="PRÉNOM">
                   <input style={S.input} placeholder="Jean"
                     value={m.first_name} onChange={e => { const ms=[...members]; ms[i].first_name=e.target.value; setMembers(ms) }} />

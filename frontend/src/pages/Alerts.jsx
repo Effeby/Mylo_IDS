@@ -227,10 +227,10 @@ export default function Alerts() {
   )
 
   return (
-    <div style={{ padding:32, color:'#F8FAFC', position:'relative' }}>
+    <div className="mylo-page" style={{ color:'#F8FAFC', position:'relative' }}>
 
       {riverFeedback && (
-        <div style={{
+        <div className="mylo-floating" style={{
           position:'fixed', bottom:32, left:'50%', transform:'translateX(-50%)',
           background:'#1E3A5F', border:'1px solid #3B82F6', borderRadius:10,
           padding:'12px 24px', color:'#93C5FD', fontSize:13, fontWeight:600,
@@ -239,7 +239,7 @@ export default function Alerts() {
       )}
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
           <h1 style={{ margin:0, fontSize:22, fontWeight:800 }}>Alertes</h1>
           <p style={{ margin:'4px 0 0', color:'#94A3B8', fontSize:13 }}>
@@ -288,7 +288,7 @@ export default function Alerts() {
         </select>
         <input value={filterIP} onChange={e => setFilterIP(e.target.value)}
           placeholder="Filtrer par IP..." onKeyDown={e => e.key === 'Enter' && load()}
-          style={{ padding:'8px 14px', borderRadius:8, background:'#0F1629', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:13, outline:'none', width:180 }} />
+          style={{ padding:'8px 14px', borderRadius:8, background:'#0F1629', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:13, outline:'none', flex:'1 1 160px', maxWidth:220, minWidth:0 }} />
         <button onClick={load} style={{ padding:'8px 14px', borderRadius:8, background:'#3B82F6', border:'none', color:'#fff', cursor:'pointer' }}>
           <Filter size={14} />
         </button>
@@ -340,7 +340,8 @@ export default function Alerts() {
       )}
 
       {/* Table */}
-      <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, overflow:'hidden' }}>
+      <div className="mylo-table-scroll" style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12 }}>
+        <div style={{ minWidth:980 }}>
         <div style={{
           display:'grid', gridTemplateColumns:'140px 1fr 1fr 1fr 90px 1fr 1fr 130px',
           padding:'12px 20px', borderBottom:'1px solid #1E2D4F',
@@ -396,12 +397,13 @@ export default function Alerts() {
             </div>
           )
         })}
+        </div>
       </div>
 
       {/* Panneau détail */}
       {selected && (
-        <div style={{
-          position:'fixed', top:0, right:0, bottom:0, width:440,
+        <div className="mylo-panel" style={{
+          position:'fixed', top:0, right:0, bottom:0, width:'min(440px, 100vw)',
           background:'#0A0E1A', borderLeft:'1px solid #1E2D4F',
           padding:28, overflowY:'auto', zIndex:100,
         }}>
@@ -495,7 +497,7 @@ export default function Alerts() {
                 <div style={{ fontSize:11, color:'#475569', fontWeight:700, marginBottom:10, letterSpacing:'0.05em' }}>
                   RÉSULTAT DU REPLAY
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                <div className="mylo-grid-2" style={{ gap:8 }}>
                   {/* Original */}
                   <div style={{ padding:'10px', borderRadius:6, background:'rgba(100,116,139,0.1)', border:'1px solid #1E2D4F' }}>
                     <div style={{ fontSize:10, color:'#475569', marginBottom:6, fontWeight:700 }}>ORIGINAL</div>

@@ -5,7 +5,29 @@
       "Bash(python -m py_compile ml/capture.py backend/alerts/views.py backend/core/settings.py)",
       "Bash(python3 -m py_compile ml/capture.py backend/alerts/views.py backend/core/settings.py)",
       "Bash(awk 'NR==529,NR==767' /d/MYLO/backend/alerts/views.py)",
-      "Bash(python -m py_compile backend/alerts/tasks.py backend/alerts/views.py)"
+      "Bash(python -m py_compile backend/alerts/tasks.py backend/alerts/views.py)",
+      "Bash(python -m py_compile ml/capture.py)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('ml/capture.py', encoding='utf-8'\\).read\\(\\)\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('backend/alerts/tasks.py', encoding='utf-8'\\).read\\(\\)\\)\")",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(chromium-cli --help)",
+      "Bash(npx playwright *)",
+      "Bash(ls C:/Users/LENOVO/AppData/Local/ms-playwright/ 2>&1)",
+      "Read(//c/Users/LENOVO/AppData/Local/ms-playwright/**)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node check_responsive.js)",
+      "Bash(cat .env)",
+      "Bash(cat .env.local)",
+      "Bash(cat .env.development)",
+      "Bash(python -m py_compile alerts/views.py alerts/tasks.py)",
+      "Bash(npm run *)",
+      "Bash(python manage.py check)",
+      "Bash(python -m py_compile alerts/models.py)",
+      "Bash(python manage.py makemigrations alerts)",
+      "Bash(python -m py_compile alerts/tasks.py alerts/wazuh_client.py alerts/models.py)",
+      "Bash(python manage.py makemigrations --check --dry-run)"
     ]
   }
 }

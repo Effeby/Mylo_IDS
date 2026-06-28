@@ -1099,7 +1099,25 @@ class SettingsView(APIView):
             'notif_email_enabled':       s.notif_email_enabled,
             'notif_email_address':       s.notif_email_address,
             'notif_email_min_severity':  s.notif_email_min_severity,
+
+            **self._opnsense_payload(request, s),
         })
+
+    def _opnsense_payload(self, request, s):
+        """
+        Champs OPNsense — réservés aux org_admin (et super_admin) :
+        les autres rôles ne reçoivent même pas ces clés. La clé/secret API
+        ne sont jamais renvoyés en clair une fois configurés : on retourne
+        '****' pour signaler qu'une valeur existe sans la divulguer.
+        """
+        if not getattr(request.user, 'is_org_admin', False):
+            return {}
+        return {
+            'opnsense_enabled':     s.opnsense_enabled,
+            'opnsense_url':         s.opnsense_url,
+            'opnsense_api_key':     '****' if s.opnsense_api_key    else '',
+            'opnsense_api_secret':  '****' if s.opnsense_api_secret else '',
+        }
 
     def put(self, request):
         s = IDSSettings.get(get_org(request))
@@ -1141,6 +1159,17 @@ class SettingsView(APIView):
         if 'notif_email_enabled'      in d: s.notif_email_enabled      = bool(d['notif_email_enabled'])
         if 'notif_email_address'      in d: s.notif_email_address      = d['notif_email_address']
         if 'notif_email_min_severity' in d: s.notif_email_min_severity = d['notif_email_min_severity']
+
+        # OPNsense — réservé aux org_admin (et super_admin). La clé/secret API
+        # ne sont mis à jour que si la valeur envoyée n'est pas le masque
+        # '****' renvoyé en lecture (sinon on écraserait la vraie valeur).
+        if getattr(request.user, 'is_org_admin', False):
+            if 'opnsense_enabled' in d: s.opnsense_enabled = bool(d['opnsense_enabled'])
+            if 'opnsense_url'     in d: s.opnsense_url     = d['opnsense_url']
+            if 'opnsense_api_key'    in d and d['opnsense_api_key']    != '****':
+                s.opnsense_api_key    = d['opnsense_api_key']
+            if 'opnsense_api_secret' in d and d['opnsense_api_secret'] != '****':
+                s.opnsense_api_secret = d['opnsense_api_secret']
 
         s.updated_by = request.user.username
         s.save()

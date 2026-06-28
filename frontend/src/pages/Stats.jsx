@@ -121,10 +121,10 @@ export default function Stats() {
   ].filter(d => d.value > 0)
 
   return (
-    <div style={{ padding: 32, color: '#F8FAFC' }}>
+    <div className="mylo-page" style={{ color: '#F8FAFC' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>Statistiques</h1>
           <p style={{ margin: 0, color: '#94A3B8', fontSize: 13 }}>
@@ -134,7 +134,7 @@ export default function Stats() {
             </span>
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={downloadCSV} style={{
             padding: '8px 14px', borderRadius: 8, border: '1px solid #1E2D4F',
             background: 'transparent', color: '#94A3B8', cursor: 'pointer',
@@ -162,7 +162,7 @@ export default function Stats() {
       </div>
 
       {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+      <div className="mylo-grid-cards" style={{ gap: 16, marginBottom: 28 }}>
         {[
           { label: 'Total analysé',   value: stats.total,   color: '#3B82F6' },
           { label: 'Alertes',        value: stats.attacks, color: '#EF4444' },
@@ -232,7 +232,7 @@ export default function Stats() {
       </div>
 
       {/* Graphiques */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+      <div className="mylo-grid-2" style={{ gap: 16, marginBottom: 20 }}>
         {/* Pie — types */}
         <div style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12, padding: 24 }}>
           <h3 style={{ margin: '0 0 20px', fontSize: 14, color: '#94A3B8', fontWeight: 600 }}>
@@ -340,7 +340,7 @@ export default function Stats() {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+          <div className="mylo-grid-3" style={{ gap: 16, marginBottom: 16 }}>
             {[
               { label: 'Modèle',      value: river.model_type },
               { label: 'Flux appris', value: river.total_learned.toLocaleString() },
@@ -353,7 +353,7 @@ export default function Stats() {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+          <div className="mylo-grid-cards" style={{ gap: 8 }}>
             {Object.entries(river.counts || {}).map(([cls, count]) => (
               <div key={cls} style={{
                 background: '#0A0E1A', borderRadius: 8, padding: '8px 10px', textAlign: 'center',

@@ -37,12 +37,30 @@ class WazuhClient:
             raise Exception('Token Wazuh introuvable')
         return token
 
-    def get_alerts(self, limit=50):
+    def get_alerts(self, limit=50, since_minutes=None):
+        """
+        Récupère les alertes Wazuh depuis OpenSearch.
+
+        since_minutes, si fourni, restreint la recherche aux documents dont
+        @timestamp est dans la fenêtre [now - since_minutes, now] — évite de
+        repolling indéfiniment les mêmes vieilles alertes à chaque cycle.
+
+        Chaque dict retourné est le `_source` du document, enrichi d'une clé
+        `_id` (l'identifiant du document OpenSearch) utilisée pour dédupliquer
+        les alertes déjà persistées en BD.
+        """
         url = f"{self.base_url}:9200/wazuh-alerts-*/_search"
+        query = {"match_all": {}}
+        if since_minutes is not None:
+            query = {
+                "range": {
+                    "@timestamp": {"gte": f"now-{since_minutes}m", "lte": "now"}
+                }
+            }
         payload = {
             "size": limit,
             "sort": [{"@timestamp": {"order": "desc"}}],
-            "query": {"match_all": {}}
+            "query": query,
         }
         resp = requests.post(
             url,
@@ -56,7 +74,12 @@ class WazuhClient:
         )
         resp.raise_for_status()
         hits = resp.json().get('hits', {}).get('hits', [])
-        return [h['_source'] for h in hits]
+        results = []
+        for h in hits:
+            source = dict(h['_source'])
+            source['_id'] = h.get('_id')
+            results.append(source)
+        return results
 
     def status(self):
         try:

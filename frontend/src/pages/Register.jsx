@@ -16,8 +16,8 @@ const SECTORS = [
 ]
 
 const S = {
-  page:  { minHeight: '100vh', background: '#070B14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  card:  { width: '100%', maxWidth: 520, background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 40 },
+  page:  { minHeight: '100vh', background: '#070B14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  card:  { width: '100%', maxWidth: 520, background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(20px, 6vw, 40px)', boxSizing: 'border-box' },
   input: { width: '100%', padding: '11px 14px 11px 40px', borderRadius: 8, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 14, outline: 'none', boxSizing: 'border-box' },
   label: { fontSize: 12, color: '#94A3B8', fontWeight: 600, marginBottom: 6, display: 'block', letterSpacing: '0.05em' },
   field: { marginBottom: 16, position: 'relative' },
@@ -134,7 +134,7 @@ const userEmail = form.email.trim()
           VOTRE COMPTE ADMINISTRATEUR
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="mylo-grid-2" style={{ gap: 12 }}>
           <Field label="PRÉNOM" icon={User}>
             <input style={S.input} placeholder="Jean"
               value={form.first_name} onChange={e => set('first_name', e.target.value)} />
@@ -155,7 +155,7 @@ const userEmail = form.email.trim()
             value={form.email} onChange={e => set('email', e.target.value)} />
         </Field>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="mylo-grid-2" style={{ gap: 12 }}>
           <Field label="MOT DE PASSE" icon={Lock}>
             <input style={S.input} type={showPwd ? 'text' : 'password'} placeholder="Min. 8 caractères"
               value={form.password} onChange={e => set('password', e.target.value)} />
@@ -187,7 +187,7 @@ const userEmail = form.email.trim()
             value={form.org_name} onChange={e => set('org_name', e.target.value)} />
         </Field>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="mylo-grid-2" style={{ gap: 12 }}>
           <Field label="EMAIL ORGANISATION" icon={Mail}>
             <input style={S.input} type="email" placeholder="contact@entreprise.com"
               value={form.org_email} onChange={e => set('org_email', e.target.value)} />

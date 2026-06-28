@@ -79,10 +79,10 @@ export default function Monitor() {
   }, [results, search, typeFilter, onlyAttacks])
 
   return (
-    <div style={{ padding: 32, color: '#F8FAFC' }}>
+    <div className="mylo-page" style={{ color: '#F8FAFC' }}>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Moniteur en direct</h1>
           <p style={{ margin: '4px 0 0', color: '#94A3B8', fontSize: 13 }}>
@@ -100,7 +100,7 @@ export default function Monitor() {
       </div>
 
       {/* ── KPI Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="mylo-grid-cards" style={{ gap: 16, marginBottom: 24 }}>
         {[
           { label: 'Total analysé', value: stats.total,   icon: Wifi,         color: '#3B82F6' },
           { label: 'Alertes',      value: stats.attacks, icon: AlertTriangle, color: '#EF4444' },
@@ -220,7 +220,8 @@ export default function Monitor() {
       </div>
 
       {/* ── Table ── */}
-      <div style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12, overflow: 'hidden' }}>
+      <div className="mylo-table-scroll" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12 }}>
+        <div style={{ minWidth: 880 }}>
 
         {/* Header table */}
         <div style={{
@@ -357,6 +358,7 @@ export default function Monitor() {
             )
           })
         )}
+        </div>
       </div>
 
       {/* Résumé filtres */}

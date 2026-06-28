@@ -279,10 +279,10 @@ export default function ThreatMap() {
   }
 
   return (
-    <div style={{ padding:32, color:'#F8FAFC', height:'100vh', maxHeight:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', boxSizing:'border-box' }}>
+    <div className="mylo-page" style={{ color:'#F8FAFC', height:'100vh', maxHeight:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', boxSizing:'border-box' }}>
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <div style={{ width:42, height:42, borderRadius:10, background:'linear-gradient(135deg,#3B82F6,#1E40AF)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <Globe size={22} color="#fff" />
@@ -338,7 +338,7 @@ export default function ThreatMap() {
       )}
 
       {/* KPIs */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 2fr', gap:12, marginBottom:12 }}>
+      <div className="mylo-grid-responsive" style={{ '--cols': '1fr 1fr 2fr', gap:12, marginBottom:12 }}>
         <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
           <MapPin size={18} color="#3B82F6" />
           <div>
@@ -385,10 +385,10 @@ export default function ThreatMap() {
 
         {/* Panneau détail */}
         {selected && (
-          <div style={{
+          <div className="mylo-panel" style={{
             position:'absolute', top:16, right:16, zIndex:1000,
             background:'rgba(10,14,26,0.97)', border:'1px solid #1E2D4F',
-            borderRadius:12, padding:20, width:280,
+            borderRadius:12, padding:20, width:'min(280px, calc(100vw - 32px))',
             backdropFilter:'blur(10px)',
           }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>

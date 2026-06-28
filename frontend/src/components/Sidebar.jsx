@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Activity, Bell, BarChart2, LogOut, Shield, Settings, LayoutDashboard, ClipboardList, Brain, Link2 } from 'lucide-react'
+import { Activity, Bell, BarChart2, LogOut, Shield, Settings, LayoutDashboard, ClipboardList, Brain, Link2, X } from 'lucide-react'
 
 const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 const MYLO_LOGO_URL = '/mylo_logo.png' // Put the new Mylo logo image here in frontend/public/mylo_logo.png
@@ -16,7 +16,9 @@ const nav = [
   { to: '/correlation', icon: Link2, label: 'Corrélations', minLevel: 1 },
 ]
 
-export default function Sidebar({ onCopilot }) {
+export const SIDEBAR_WIDTH = 220
+
+export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = false, onCloseMobile }) {
   const navigate = useNavigate()
 
   const currentUser = (() => {
@@ -62,13 +64,22 @@ export default function Sidebar({ onCopilot }) {
 
   return (
     <aside style={{
-      width: 220, minHeight: '100vh', background: '#0F1629',
+      width: SIDEBAR_WIDTH, minHeight: '100vh', background: '#0F1629',
       borderRight: '1px solid #1E2D4F', display: 'flex',
-      flexDirection: 'column', padding: '24px 0',
+      flexDirection: 'column', padding: '24px 0', flexShrink: 0,
+      ...(isMobile ? {
+        position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 999,
+        transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.22s ease',
+        boxShadow: mobileOpen ? '4px 0 24px rgba(0,0,0,0.5)' : 'none',
+      } : {}),
     }}>
       {/* Logo */}
-      <div style={{ padding: '0 24px 24px', borderBottom: '1px solid #1E2D4F' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        padding: '0 24px 24px', borderBottom: '1px solid #1E2D4F',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <div style={{
             width: 38, height: 38, borderRadius: 10, flexShrink: 0,
             background: '#0F1629',
@@ -96,12 +107,21 @@ export default function Sidebar({ onCopilot }) {
             </div>
           </div>
         </div>
+        {isMobile && (
+          <button
+            onClick={onCloseMobile}
+            aria-label="Fermer le menu"
+            style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 6, flexShrink: 0 }}
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: '16px 12px' }}>
         {visibleNav.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} style={({ isActive }) => ({
+          <NavLink key={to} to={to} onClick={() => isMobile && onCloseMobile?.()} style={({ isActive }) => ({
             display: 'flex', alignItems: 'center', gap: 12,
             padding: '10px 12px', borderRadius: 8, marginBottom: 4,
             textDecoration: 'none', fontSize: 14, fontWeight: 500,

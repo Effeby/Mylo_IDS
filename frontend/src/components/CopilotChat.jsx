@@ -177,13 +177,14 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
 
   return (
     <div style={{
-      position: 'fixed', bottom: 24, right: 24,
-      width: 430, height: 600,
+      position: 'fixed', bottom: 16, right: 16,
+      width: 'min(430px, calc(100vw - 32px))',
+      height: 'min(600px, calc(100vh - 32px))',
       background: '#0F1629',
       border: '1px solid #1E2D4F',
       borderRadius: 16,
       display: 'flex', flexDirection: 'column',
-      zIndex: 1000,
+      zIndex: 1000, boxSizing: 'border-box',
       boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
     }}>
 

@@ -81,10 +81,10 @@ export default function Correlation() {
   }
 
   return (
-    <div style={{ padding: 32, color: '#F8FAFC' }}>
+    <div className="mylo-page" style={{ color: '#F8FAFC' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg,#EF4444,#B91C1C)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Link2 size={22} color="#fff" />
@@ -113,7 +113,7 @@ export default function Correlation() {
 
       {/* KPIs */}
       {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
+        <div className="mylo-grid-cards" style={{ gap: 12, marginBottom: 24 }}>
           {[
             { label: 'Total scénarios',    value: stats.total,    color: '#3B82F6' },
             { label: 'Actifs',             value: stats.active,   color: '#F97316' },
@@ -141,7 +141,7 @@ export default function Correlation() {
         <summary style={{ fontSize: 12, color: '#3B82F6', cursor: 'pointer', padding: '8px 0', userSelect: 'none' }}>
           📚 Scénarios d'attaque reconnus par Mylo
         </summary>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 10 }}>
+        <div className="mylo-grid-3" style={{ gap: 8, marginTop: 10 }}>
           {[
             { seq: 'Probe → BruteForce', risk: 'CRITICAL', label: 'Recon → Exploit' },
             { seq: 'Probe → DoS/DDoS',   risk: 'CRITICAL', label: 'Recon → DoS' },

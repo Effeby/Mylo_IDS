@@ -60,6 +60,7 @@ export default function Login() {
     <div style={{
       minHeight: '100vh', background: '#0A0E1A',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16, boxSizing: 'border-box',
     }}>
       <div style={{
         position: 'absolute', inset: 0,
@@ -68,9 +69,9 @@ export default function Login() {
       }} />
 
       <div style={{
-        position: 'relative', width: 400, padding: 40,
+        position: 'relative', width: '100%', maxWidth: 400, padding: 'clamp(20px, 8vw, 40px)',
         background: '#0F1629', borderRadius: 20,
-        border: '1px solid #1E2D4F',
+        border: '1px solid #1E2D4F', boxSizing: 'border-box',
         boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
       }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>

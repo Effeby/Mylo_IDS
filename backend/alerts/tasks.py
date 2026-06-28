@@ -35,7 +35,9 @@ def poll_wazuh_alerts():
         return status.get('message')
 
     try:
-        alerts = client.get_alerts(limit=50)
+        # Fenêtre de 3 minutes + plafond de 50 docs : évite de repolling en
+        # boucle les mêmes vieilles alertes à chaque cycle (flood).
+        alerts = client.get_alerts(limit=50, since_minutes=3)
     except Exception as e:
         logger.error(f"[Wazuh] Fetch erreur: {e}")
         return f"Erreur: {e}"
@@ -43,14 +45,31 @@ def poll_wazuh_alerts():
     if not alerts:
         return "0 alertes"
 
+    # Filet de sécurité — get_alerts() applique déjà size=50 côté OpenSearch.
+    alerts = alerts[:50]
+
     from accounts.models import Organisation
+    from .models import IDSSettings, Alert, WhitelistedIP
     org = Organisation.objects.first()
     if not org:
         return "Pas d'organisation"
 
+    ids_settings = IDSSettings.get(org)
+
     processed = 0
+    skipped_duplicates = 0
     for alert in alerts:
         try:
+            wazuh_alert_id = alert.get('_id')
+
+            # Déduplication — ce document OpenSearch a-t-il déjà été persisté
+            # par un cycle de polling précédent ?
+            if wazuh_alert_id and Alert.objects.filter(
+                organisation=org, wazuh_alert_id=wazuh_alert_id
+            ).exists():
+                skipped_duplicates += 1
+                continue
+
             agent      = alert.get('agent', {})
             rule       = alert.get('rule', {})
             data_field = alert.get('data', {})
@@ -62,7 +81,6 @@ def poll_wazuh_alerts():
             )
             dst_ip = data_field.get('dstip') or data_field.get('dst_ip') or '172.16.1.1'
 
-            from .models import WhitelistedIP
             is_whitelisted = WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists()
 
             traffic = {
@@ -180,10 +198,9 @@ def poll_wazuh_alerts():
                         # sinon : on garde la prédiction XGBoost/River déjà renvoyée par /predict
 
                 # Persist in Django DB so Wazuh alerts are visible in the UI
-                from .models import Alert
                 from .views import (
                     compute_detection_score, compute_cvss_severity,
-                    get_asset_for_ip, WHITELIST_BYPASS_CONFIDENCE
+                    get_asset_for_ip, WHITELIST_BYPASS_CONFIDENCE, auto_block_ip
                 )
 
                 # IP whitelistée → on ignore seulement les alertes faibles ou
@@ -217,7 +234,7 @@ def poll_wazuh_alerts():
                 }
                 db_status = STATUS_MAP.get(alert_status, 'new')
 
-                Alert.objects.create(
+                alert = Alert.objects.create(
                     organisation      = org,
                     attack_type       = prediction.get('attack_type', 'Normal'),
                     severity          = severity,
@@ -243,9 +260,23 @@ def poll_wazuh_alerts():
                         **({'tags': ['whitelisted_source']} if is_whitelisted else {}),
                     },
                     source = 'wazuh',
+                    wazuh_alert_id = wazuh_alert_id,
                 )
 
                 processed += 1
+
+                # Blocage automatique — même logique que pour les analyses
+                # scapy (AnalyzeView), appliquée ici aux alertes Wazuh.
+                if (
+                    getattr(settings, 'MYLO_AUTO_BLOCK', False)
+                    and ids_settings.auto_block_enabled
+                    and alert.binary_confidence >= ids_settings.auto_block_threshold
+                    and alert.attack_type != 'Normal'
+                ):
+                    try:
+                        auto_block_ip(org, src_ip, f"Auto-block Wazuh: {alert.attack_type}")
+                    except Exception as block_err:
+                        logger.warning(f"[Wazuh] Auto-block erreur pour {src_ip}: {block_err}")
             except Exception as e:
                 logger.warning(f"[Wazuh] Alert traitement erreur: {e}")
                 continue
@@ -254,4 +285,4 @@ def poll_wazuh_alerts():
             logger.warning(f"[Wazuh] Alert erreur: {e}")
             continue
 
-    return f"{processed} alertes traitées"
+    return f"{processed} alertes traitées, {skipped_duplicates} doublons ignorés"
