@@ -64,8 +64,8 @@ export default function Stats() {
     })
   }
 
-  const load = async () => {
-    setLoading(true)
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const token = localStorage.getItem('mylo_access')
       const [s, r, tl] = await Promise.all([
@@ -87,8 +87,8 @@ export default function Stats() {
 
   useEffect(() => {
     load()
-    // Auto-refresh toutes les 15 secondes
-    const interval = setInterval(load, 15_000)
+    // Auto-refresh toutes les 15 secondes, sans réafficher l'écran de chargement
+    const interval = setInterval(() => load(true), 15_000)
     return () => clearInterval(interval)
   }, [])
 

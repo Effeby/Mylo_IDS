@@ -62,10 +62,8 @@ def poll_wazuh_alerts():
             )
             dst_ip = data_field.get('dstip') or data_field.get('dst_ip') or '172.16.1.1'
 
-            # IP whitelistée (src ou dst) → on ignore silencieusement, pas de save BD.
             from .models import WhitelistedIP
-            if WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists():
-                continue
+            is_whitelisted = WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists()
 
             traffic = {
                 'src_ip':         src_ip,
@@ -185,8 +183,19 @@ def poll_wazuh_alerts():
                 from .models import Alert
                 from .views import (
                     compute_detection_score, compute_cvss_severity,
-                    get_asset_for_ip
+                    get_asset_for_ip, WHITELIST_BYPASS_CONFIDENCE
                 )
+
+                # IP whitelistée → on ignore seulement les alertes faibles ou
+                # Normal. Une vraie attaque à forte confiance crée quand même
+                # l'alerte (tag 'whitelisted_source') pour détecter une IP de
+                # confiance compromise plutôt que de l'ignorer silencieusement.
+                if is_whitelisted and (
+                    not prediction.get('is_attack', False)
+                    or prediction.get('attack_type', 'Normal') == 'Normal'
+                    or prediction.get('attack_confidence', 0) < WHITELIST_BYPASS_CONFIDENCE
+                ):
+                    continue
 
                 asset = get_asset_for_ip(org, dst_ip) or get_asset_for_ip(org, src_ip)
                 detection_score = compute_detection_score(prediction)
@@ -231,6 +240,7 @@ def poll_wazuh_alerts():
                         **{k: v for k, v in traffic.items() if k not in ('src_ip', 'dst_ip')},
                         'src_port': traffic.get('src_port', 0),
                         'dst_port': traffic.get('dst_port', 0),
+                        **({'tags': ['whitelisted_source']} if is_whitelisted else {}),
                     },
                     source = 'wazuh',
                 )

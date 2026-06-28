@@ -263,6 +263,13 @@ ATTACK_WEIGHTS = {
     'Normal':              0.0,
 }
 
+# Confiance minimale pour qu'une IP whitelistée déclenche quand même une
+# alerte. Sous ce seuil (ou si Normal), l'alerte reste ignorée comme avant —
+# au-dessus, on crée l'alerte avec le tag 'whitelisted_source' car une IP de
+# confiance qui se comporte comme un attaquant à forte confiance est plus
+# probablement compromise qu'un faux positif.
+WHITELIST_BYPASS_CONFIDENCE = 0.75
+
 
 def get_asset_for_ip(org, ip):
     if not org or not ip:
@@ -535,15 +542,7 @@ class AnalyzeView(APIView):
         src_ip = traffic_data.get('src_ip') or random.choice(SIMULATED_SRC_IPS)
         dst_ip = traffic_data.get('dst_ip') or random.choice(SIMULATED_DST_IPS)
 
-        # IP whitelistée (src ou dst) → on ignore silencieusement, pas de save BD.
-        if WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists():
-            return Response({
-                'is_attack': False, 'binary_label': 'Normal',
-                'binary_confidence': 0.0, 'attack_type': 'Normal',
-                'attack_confidence': 1.0, 'severity': 'LOW',
-                'alert_status': 'Ignorée', 'src_ip': src_ip,
-                'dst_ip': dst_ip, 'whitelisted': True,
-            })
+        is_whitelisted = WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists()
 
         try:
             payload = {**traffic_data, 'src_ip': src_ip, 'dst_ip': dst_ip}
@@ -554,6 +553,23 @@ class AnalyzeView(APIView):
             prediction = resp.json()
         except Exception as e:
             return Response({'error': f'FastAPI indisponible: {e}'}, status=503)
+
+        # IP whitelistée → on ignore seulement les alertes faibles ou Normal.
+        # Une vraie attaque à forte confiance crée quand même l'alerte (cf.
+        # tag 'whitelisted_source' plus bas) pour détecter une IP de confiance
+        # compromise plutôt que de l'ignorer silencieusement.
+        if is_whitelisted and (
+            not prediction.get('is_attack', False)
+            or prediction.get('attack_type', 'Normal') == 'Normal'
+            or prediction.get('attack_confidence', 0) < WHITELIST_BYPASS_CONFIDENCE
+        ):
+            return Response({
+                'is_attack': False, 'binary_label': 'Normal',
+                'binary_confidence': 0.0, 'attack_type': 'Normal',
+                'attack_confidence': 1.0, 'severity': 'LOW',
+                'alert_status': 'Ignorée', 'src_ip': src_ip,
+                'dst_ip': dst_ip, 'whitelisted': True,
+            })
 
         asset = get_asset_for_ip(org, dst_ip) or get_asset_for_ip(org, src_ip)
         detection_score = compute_detection_score(prediction)
@@ -598,6 +614,7 @@ class AnalyzeView(APIView):
                 **{k: v for k, v in traffic_data.items() if k not in ('src_ip', 'dst_ip')},
                 'src_port': traffic_data.get('src_port', 0),
                 'dst_port': traffic_data.get('dst_port', 0),
+                **({'tags': ['whitelisted_source']} if is_whitelisted else {}),
             },
             source = traffic_data.get('source', 'scapy'),
         )
@@ -741,6 +758,7 @@ class AnalyzeView(APIView):
             'final_score':      alert.final_score,
             'alert_status':     alert_status,
             'action':           action,
+            'whitelisted_source': is_whitelisted,
         })
 
 
