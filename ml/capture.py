@@ -741,82 +741,92 @@ def send_flows():
                 'dpi_dns_queries':  features.get('_dpi_dns_queries', []),
             }
 
-            try:
-                r = requests.post(
-                    f'{DJANGO_URL}/api/alerts/analyze/',
-                    json=payload,
-                    headers=get_headers(),
-                    timeout=10
-                )
-                if r.status_code == 401:
-                    get_token()
-                    continue
-                if r.status_code != 200:
-                    continue
+            threading.Thread(
+                target=analyze_flow_async,
+                args=(payload, features, flow, phase_actuelle, river_learn_threshold),
+                daemon=True
+            ).start()
 
-                result       = r.json()
-                is_attack    = result.get('is_attack', False)
-                attack_type  = result.get('attack_type', 'Normal')
-                confidence   = result.get('binary_confidence', 0)
-                alert_status = result.get('alert_status', 'Nouvelle')
-                if_triggered = result.get('if_triggered', False)
-                dpi_susp     = features.get('_dpi_suspicion', 0.0)
-                dpi_reasons  = features.get('_dpi_reasons', '')
-                app_proto    = features.get('_dpi_app_protocol', '')
-                stats['sent'] += 1
 
-                src_port = flow['src_port']
-                dst_port = flow['dst_port']
+def analyze_flow_async(payload, features, flow, phase_actuelle, river_learn_threshold):
+    try:
+        r = requests.post(
+            f'{DJANGO_URL}/api/alerts/analyze/',
+            json=payload,
+            headers=get_headers(),
+            timeout=15
+        )
+        if r.status_code == 401:
+            get_token()
+            return
+        if r.status_code != 200:
+            return
 
-                # ── DPI override : suspicion élevée même si ML dit Normal
-                if not is_attack and dpi_susp >= 0.5:
-                    is_attack   = True
-                    attack_type = "Anomalie"
-                    alert_status = "À vérifier"
-                    print(f"  🔍 DPI [{app_proto:8s}] suspicion={dpi_susp:.2f} "
-                          f"{flow['src_ip']}:{src_port} → {flow['dst_ip']}:{dst_port} "
-                          f"[{dpi_reasons}]")
+        result       = r.json()
+        is_attack    = result.get('is_attack', False)
+        attack_type  = result.get('attack_type', 'Normal')
+        confidence   = result.get('binary_confidence', 0)
+        alert_status = result.get('alert_status', 'Nouvelle')
+        if_triggered = result.get('if_triggered', False)
+        dpi_susp     = features.get('_dpi_suspicion', 0.0)
+        dpi_reasons  = features.get('_dpi_reasons', '')
+        app_proto    = features.get('_dpi_app_protocol', '')
+        stats['sent'] += 1
 
+        src_port = flow['src_port']
+        dst_port = flow['dst_port']
+
+        # ── DPI override : suspicion élevée même si ML dit Normal
+        if not is_attack and dpi_susp >= 0.5:
+            is_attack   = True
+            attack_type = "Anomalie"
+            alert_status = "À vérifier"
+            print(f"  🔍 DPI [{app_proto:8s}] suspicion={dpi_susp:.2f} "
+                  f"{flow['src_ip']}:{src_port} → {flow['dst_ip']}:{dst_port} "
+                  f"[{dpi_reasons}]")
+
+        if is_attack:
+            stats['attacks'] += 1
+            if_tag = " [IF🎯]" if if_triggered else ""
+            print(f"  🚨 {attack_type:12s} [{result.get('severity', 'HIGH'):8s}]{if_tag} "
+                  f"{flow['src_ip']:15s}:{src_port:<5} → "
+                  f"{flow['dst_ip']:15s}:{dst_port:<5} "
+                  f"conf:{confidence:.2f} [{alert_status}] "
+                  f"app:{app_proto}")
+        else:
+            print(f"  ✓  Normal        [LOW     ] "
+                  f"{flow['src_ip']:15s}:{src_port:<5} → "
+                  f"{flow['dst_ip']:15s}:{dst_port:<5} "
+                  f"app:{app_proto}")
+
+        # ── River gated par phase ─────────────────────────────
+        river_doit_apprendre = False
+        if phase_actuelle == 'learning':
+            if not is_attack:
+                river_doit_apprendre = True
+                print(f"  📚 River [LEARNING] apprend trafic Normal")
+            else:
+                print(f"  📚 River [LEARNING] skip attaque")
+        elif phase_actuelle == 'validation':
+            print(f"  ⏳ River [VALIDATION] en attente admin")
+        elif phase_actuelle == 'production':
+            if confidence >= river_learn_threshold:
+                river_doit_apprendre = True
+            else:
+                stats['river_skipped'] += 1
                 if is_attack:
-                    stats['attacks'] += 1
-                    if_tag = " [IF🎯]" if if_triggered else ""
-                    print(f"  🚨 {attack_type:12s} [{result.get('severity', 'HIGH'):8s}]{if_tag} "
-                          f"{flow['src_ip']:15s}:{src_port:<5} → "
-                          f"{flow['dst_ip']:15s}:{dst_port:<5} "
-                          f"conf:{confidence:.2f} [{alert_status}] "
-                          f"app:{app_proto}")
-                else:
-                    print(f"  ✓  Normal        [LOW     ] "
-                          f"{flow['src_ip']:15s}:{src_port:<5} → "
-                          f"{flow['dst_ip']:15s}:{dst_port:<5} "
-                          f"app:{app_proto}")
+                    print(f"  ⏸  River skip (conf {confidence:.2f})")
 
-                # ── River gated par phase ─────────────────────────────
-                river_doit_apprendre = False
-                if phase_actuelle == 'learning':
-                    if not is_attack:
-                        river_doit_apprendre = True
-                        print(f"  📚 River [LEARNING] apprend trafic Normal")
-                    else:
-                        print(f"  📚 River [LEARNING] skip attaque")
-                elif phase_actuelle == 'validation':
-                    print(f"  ⏳ River [VALIDATION] en attente admin")
-                elif phase_actuelle == 'production':
-                    if confidence >= river_learn_threshold:
-                        river_doit_apprendre = True
-                    else:
-                        stats['river_skipped'] += 1
-                        if is_attack:
-                            print(f"  ⏸  River skip (conf {confidence:.2f})")
+        if river_doit_apprendre:
+            true_label = attack_type if is_attack else 'Normal'
+            river_learn(features, true_label)
 
-                if river_doit_apprendre:
-                    true_label = attack_type if is_attack else 'Normal'
-                    river_learn(features, true_label)
-
-            except requests.exceptions.ConnectionError:
-                print("  ✗ Django/FastAPI non disponible")
-            except Exception as e:
-                print(f"  ✗ Erreur: {e}")
+    except requests.exceptions.Timeout:
+        pass
+    except requests.exceptions.ConnectionError:
+        print("  ✗ Django/FastAPI non disponible")
+    except Exception as e:
+        print(f"  ✗ Erreur: {e}")
 
 
 def print_stats():
