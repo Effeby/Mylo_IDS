@@ -84,75 +84,102 @@ def poll_wazuh_alerts():
                 'rerror_rate':    0.0,
             }
 
-            # Call FastAPI ML predict endpoint
+            rule_id    = int(rule.get('id', 0))
+            rule_level = int(rule.get('level', 0))
+
+            # Alerte Wazuh sans aucune donnée de flux réseau : XGBoost n'a aucun
+            # signal discriminant dans ce cas, on ne l'appelle pas et on classe
+            # uniquement via le mapping rule_id -> classe Mylo. Si le rule_id est
+            # inconnu, on ignore l'alerte plutôt que de risquer un faux positif ML.
+            no_network_features = (
+                traffic['src_bytes'] == 0 and
+                traffic['dst_bytes'] == 0 and
+                traffic['src_port']  == 0 and
+                traffic['dst_port']  == 0
+            )
+
             try:
-                resp = requests.post(
-                    f"{settings.MYLO_FASTAPI_URL}/predict",
-                    json=traffic,
-                    timeout=30,
-                )
-                if not resp.ok:
-                    logger.warning(f"[Wazuh] FastAPI predict failed: {resp.status_code}")
-                    continue
-                prediction = resp.json()
+                if no_network_features:
+                    if not is_rule_id_mapped(rule_id):
+                        continue
 
-                # Classification par rule_id Wazuh (mapping centralisé)
-                rule_id    = int(rule.get('id', 0))
-                rule_level = int(rule.get('level', 0))
-
-                if is_rule_id_mapped(rule_id):
                     mylo_class = get_alert_class(rule_id)
                     defaults   = CLASS_DEFAULTS[mylo_class]
-                    prediction['attack_type']       = mylo_class
-                    prediction['is_attack']          = mylo_class != NORMAL
-                    prediction['attack_confidence']  = defaults['confidence']
-                    prediction['binary_confidence']  = defaults['confidence']
-                    prediction['binary_label']       = 'Attack' if mylo_class != NORMAL else 'Normal'
-                    prediction['severity']           = defaults['severity']
-                    prediction['alert_status']       = 'Nouvelle' if mylo_class != NORMAL else 'Normal'
+                    prediction = {
+                        'attack_type':       mylo_class,
+                        'is_attack':         mylo_class != NORMAL,
+                        'attack_confidence': 0.90,
+                        'binary_confidence': 0.90,
+                        'binary_label':      'Attack' if mylo_class != NORMAL else 'Normal',
+                        'severity':          defaults['severity'],
+                        'alert_status':      'Nouvelle' if mylo_class != NORMAL else 'Normal',
+                    }
                 else:
-                    # rule_id non mappé — journalisé pour enrichir le mapping progressivement
-                    logger.info(
-                        f"[Wazuh] rule_id non mappé: {rule_id} (niveau {rule_level}) "
-                        f"— {rule.get('description', '')}"
+                    # Call FastAPI ML predict endpoint
+                    resp = requests.post(
+                        f"{settings.MYLO_FASTAPI_URL}/predict",
+                        json=traffic,
+                        timeout=30,
                     )
-                    try:
-                        from accounts.models import AuditLog
-                        AuditLog.log(
-                            action='wazuh_rule_unmapped',
-                            organisation=org,
-                            description=(
-                                f"Rule ID Wazuh non mappé : {rule_id} (niveau {rule_level}) "
-                                f"— {rule.get('description', '')}"
-                            ),
-                            object_type='WazuhRule',
-                            object_id=rule_id,
-                            success=False,
-                            extra_data={
-                                'rule_id':          rule_id,
-                                'rule_level':        rule_level,
-                                'rule_description':  rule.get('description', ''),
-                                'rule_groups':       rule.get('groups', []),
-                                'src_ip':            src_ip,
-                            },
-                        )
-                    except Exception as audit_err:
-                        logger.warning(f"[Wazuh] AuditLog rule non mappé erreur: {audit_err}")
+                    if not resp.ok:
+                        logger.warning(f"[Wazuh] FastAPI predict failed: {resp.status_code}")
+                        continue
+                    prediction = resp.json()
 
-                    # Pas de règle connue : on tente la classification ML (XGBoost,
-                    # déjà calculée ci-dessus via /predict). Si les features dispo
-                    # sont insuffisantes pour faire confiance à cette prédiction,
-                    # on bascule sur 'Suspicious' plutôt que de classer en Normal.
-                    if not _has_sufficient_features(traffic):
-                        defaults = CLASS_DEFAULTS[SUSPICIOUS]
-                        prediction['attack_type']       = SUSPICIOUS
-                        prediction['is_attack']          = True
+                    # Classification par rule_id Wazuh (mapping centralisé)
+                    if is_rule_id_mapped(rule_id):
+                        mylo_class = get_alert_class(rule_id)
+                        defaults   = CLASS_DEFAULTS[mylo_class]
+                        prediction['attack_type']       = mylo_class
+                        prediction['is_attack']          = mylo_class != NORMAL
                         prediction['attack_confidence']  = defaults['confidence']
                         prediction['binary_confidence']  = defaults['confidence']
-                        prediction['binary_label']       = 'Suspicious'
+                        prediction['binary_label']       = 'Attack' if mylo_class != NORMAL else 'Normal'
                         prediction['severity']           = defaults['severity']
-                        prediction['alert_status']       = 'À vérifier'
-                    # sinon : on garde la prédiction XGBoost/River déjà renvoyée par /predict
+                        prediction['alert_status']       = 'Nouvelle' if mylo_class != NORMAL else 'Normal'
+                    else:
+                        # rule_id non mappé — journalisé pour enrichir le mapping progressivement
+                        logger.info(
+                            f"[Wazuh] rule_id non mappé: {rule_id} (niveau {rule_level}) "
+                            f"— {rule.get('description', '')}"
+                        )
+                        try:
+                            from accounts.models import AuditLog
+                            AuditLog.log(
+                                action='wazuh_rule_unmapped',
+                                organisation=org,
+                                description=(
+                                    f"Rule ID Wazuh non mappé : {rule_id} (niveau {rule_level}) "
+                                    f"— {rule.get('description', '')}"
+                                ),
+                                object_type='WazuhRule',
+                                object_id=rule_id,
+                                success=False,
+                                extra_data={
+                                    'rule_id':          rule_id,
+                                    'rule_level':        rule_level,
+                                    'rule_description':  rule.get('description', ''),
+                                    'rule_groups':       rule.get('groups', []),
+                                    'src_ip':            src_ip,
+                                },
+                            )
+                        except Exception as audit_err:
+                            logger.warning(f"[Wazuh] AuditLog rule non mappé erreur: {audit_err}")
+
+                        # Pas de règle connue : on tente la classification ML (XGBoost,
+                        # déjà calculée ci-dessus via /predict). Si les features dispo
+                        # sont insuffisantes pour faire confiance à cette prédiction,
+                        # on bascule sur 'Suspicious' plutôt que de classer en Normal.
+                        if not _has_sufficient_features(traffic):
+                            defaults = CLASS_DEFAULTS[SUSPICIOUS]
+                            prediction['attack_type']       = SUSPICIOUS
+                            prediction['is_attack']          = True
+                            prediction['attack_confidence']  = defaults['confidence']
+                            prediction['binary_confidence']  = defaults['confidence']
+                            prediction['binary_label']       = 'Suspicious'
+                            prediction['severity']           = defaults['severity']
+                            prediction['alert_status']       = 'À vérifier'
+                        # sinon : on garde la prédiction XGBoost/River déjà renvoyée par /predict
 
                 # Persist in Django DB so Wazuh alerts are visible in the UI
                 from .models import Alert
