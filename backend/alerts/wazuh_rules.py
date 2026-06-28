@@ -34,6 +34,12 @@ RULE_ID_CLASS_MAP = {
     5720: BRUTE_FORCE,
     5503: BRUTE_FORCE,
     5504: BRUTE_FORCE,
+    5758: BRUTE_FORCE,  # tentatives d'authentification maximales SSH dépassées
+    5760: BRUTE_FORCE,  # connexion SSH échouée multiple
+    5701: BRUTE_FORCE,
+    5702: BRUTE_FORCE,
+    5703: BRUTE_FORCE,
+    5704: BRUTE_FORCE,
 
     # PortScan — détection de scan de ports (règles nmap/firewall Wazuh)
     40101: PORT_SCAN,
