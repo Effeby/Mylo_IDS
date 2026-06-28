@@ -81,20 +81,24 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
         boxShadow: mobileOpen ? '4px 0 24px rgba(0,0,0,0.5)' : 'none',
       } : {}),
     }}>
-      {/* Logo */}
+      {/* Logo + toggle — toujours sur la même ligne, repliée ou non */}
       <div style={{
-        padding: rail ? '0 12px 16px' : '0 24px 24px', borderBottom: '1px solid #1E2D4F',
+        padding: rail ? '0 6px 16px' : '0 24px 24px', borderBottom: '1px solid #1E2D4F',
         display: 'flex', alignItems: 'center',
         justifyContent: rail ? 'center' : 'space-between',
+        gap: rail ? 6 : 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+            width: rail ? 28 : 38, height: rail ? 28 : 38, borderRadius: rail ? 8 : 10, flexShrink: 0,
             background: '#0F1629',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
+            transition: 'width 0.22s ease, height 0.22s ease',
           }}>
-            {logoLoaded ? (
+            {rail ? (
+              <Shield size={15} color="#fff" />
+            ) : logoLoaded ? (
               <img
                 src={MYLO_LOGO_URL}
                 alt="Mylo logo"
@@ -117,7 +121,8 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
             </div>
           )}
         </div>
-        {isMobile && (
+
+        {isMobile ? (
           <button
             onClick={onCloseMobile}
             aria-label="Fermer le menu"
@@ -125,30 +130,25 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
           >
             <X size={20} />
           </button>
-        )}
-      </div>
-
-      {/* Toggle repli/dépli — desktop uniquement */}
-      {!isMobile && (
-        <div style={{ display: 'flex', justifyContent: rail ? 'center' : 'flex-end', padding: '10px 12px 0' }}>
+        ) : (
           <button
             onClick={onToggleCollapse}
             aria-label={rail ? 'Agrandir le menu' : 'Réduire le menu'}
             title={rail ? 'Agrandir le menu' : 'Réduire le menu'}
             style={{
-              width: 28, height: 28, borderRadius: 7,
+              width: rail ? 22 : 28, height: rail ? 22 : 28, borderRadius: 7, flexShrink: 0,
               border: '1px solid #1E2D4F', background: '#131C33',
               color: '#94A3B8', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.18s, color 0.18s, border-color 0.18s',
+              transition: 'background 0.18s, color 0.18s, border-color 0.18s, width 0.22s ease, height 0.22s ease',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#3B82F6'; e.currentTarget.style.borderColor = '#3B82F6' }}
             onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.borderColor = '#1E2D4F' }}
           >
-            {rail ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+            {rail ? <ChevronRight size={13} /> : <ChevronLeft size={15} />}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: '16px 12px' }}>
