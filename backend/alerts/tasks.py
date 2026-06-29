@@ -7,6 +7,24 @@ from .wazuh_rules import get_alert_class, is_rule_id_mapped, CLASS_DEFAULTS, NOR
 
 logger = logging.getLogger(__name__)
 
+# IPs de l'infrastructure Mylo — jamais alertées entre elles
+INFRASTRUCTURE_IPS = {
+    "173.212.241.228",
+    "172.16.1.94",
+    "10.0.0.1",
+    "10.0.0.2",
+    "10.0.0.4",
+}
+
+INFRASTRUCTURE_PAIRS = {
+    ("173.212.241.228", "172.16.1.94"),
+    ("172.16.1.94", "173.212.241.228"),
+    ("10.0.0.2", "172.16.1.94"),
+    ("172.16.1.94", "10.0.0.2"),
+    ("10.0.0.2", "10.0.0.4"),
+    ("10.0.0.4", "10.0.0.2"),
+}
+
 
 def _has_sufficient_features(traffic: dict) -> bool:
     """
@@ -80,6 +98,13 @@ def poll_wazuh_alerts():
                 agent.get('ip', '0.0.0.0')
             )
             dst_ip = data_field.get('dstip') or data_field.get('dst_ip') or '172.16.1.1'
+
+            # Skip silencieux pour le trafic infra interne (au-dessus de la
+            # whitelist admin — ne doit pas interférer avec elle)
+            if (src_ip, dst_ip) in INFRASTRUCTURE_PAIRS:
+                continue
+            if src_ip in INFRASTRUCTURE_IPS and dst_ip in INFRASTRUCTURE_IPS:
+                continue
 
             is_whitelisted = WhitelistedIP.objects.filter(organisation=org, ip_address__in=[src_ip, dst_ip]).exists()
 

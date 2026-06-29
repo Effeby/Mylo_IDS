@@ -38,6 +38,24 @@ CAPTURE_IFACES = [i.strip() for i in _ifaces_raw.split(",") if i.strip().lower()
 WINDOW_SEC     = 2
 RIVER_AUTO_LEARN_THRESHOLD = 0.70
 
+# IPs de l'infrastructure Mylo — jamais alertées entre elles
+INFRASTRUCTURE_IPS = {
+    "173.212.241.228",  # VPS Contabo (mylo-ids.site)
+    "172.16.1.94",      # BanqueAdmin (Docker host)
+    "10.0.0.1",         # WireGuard gateway
+    "10.0.0.2",         # VPS wg0
+    "10.0.0.4",         # Windows peer WireGuard
+}
+
+INFRASTRUCTURE_PAIRS = {
+    ("173.212.241.228", "172.16.1.94"),
+    ("172.16.1.94", "173.212.241.228"),
+    ("10.0.0.2", "172.16.1.94"),
+    ("172.16.1.94", "10.0.0.2"),
+    ("10.0.0.2", "10.0.0.4"),
+    ("10.0.0.4", "10.0.0.2"),
+}
+
 AUTH_TOKEN = None
 AUTH_USER  = None
 token_lock = threading.Lock()
@@ -479,6 +497,15 @@ def packet_to_flow(pkt):
         return
 
     ip  = pkt[IP]
+
+    # Ignorer silencieusement le trafic interne infra
+    if (ip.src, ip.dst) in INFRASTRUCTURE_PAIRS:
+        return
+
+    # Ignorer les flux où les deux extrémités sont de l'infra
+    if ip.src in INFRASTRUCTURE_IPS and ip.dst in INFRASTRUCTURE_IPS:
+        return
+
     key = f"{ip.src}→{ip.dst}"
     pkt_len = len(pkt)
     now = time.time()
