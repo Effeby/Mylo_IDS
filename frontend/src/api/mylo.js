@@ -40,7 +40,7 @@ django.interceptors.response.use(
         return django(original)
       } catch {
         localStorage.clear()
-        window.location.href = '/login'
+        window.location.href = '/'
       }
     }
     return Promise.reject(err)
