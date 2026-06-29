@@ -94,14 +94,34 @@ export function MonitorProvider({ children }) {
 
   const start = async () => {
     try {
-      const alerts = await getAlerts({ limit: 1 })
+      const alerts = await getAlerts({ limit: 20 })
       if (alerts && alerts.length > 0) {
-        lastIdRef.current = alerts[0].id
+        // Afficher uniquement les alertes des 5 dernières minutes
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+        const recentAlerts = alerts.filter(a => new Date(a.detected_at) > fiveMinutesAgo)
+
+        if (recentAlerts.length > 0) {
+          // Afficher immédiatement les alertes récentes
+          lastIdRef.current = Math.max(...recentAlerts.map(a => a.id))
+          setResults(recentAlerts.slice(0, 100))
+          const attackCount = recentAlerts.filter(
+            a => a.is_attack === true || a.is_attack === 1
+          ).length
+          setStats({
+            total: recentAlerts.length,
+            attacks: attackCount,
+            normal: recentAlerts.length - attackCount,
+          })
+          setCaptureOk(true)
+        } else {
+          // Pas d'alertes récentes — partir du dernier ID sans rien afficher
+          lastIdRef.current = alerts[0].id
+          setCaptureOk(false)
+        }
       }
-    } catch(e) {}
-    setResults([])
-    setStats({ total: 0, attacks: 0, normal: 0 })
-    setCaptureOk(null)
+    } catch(e) {
+      setCaptureOk(false)
+    }
     setRunning(true)
   }
 
