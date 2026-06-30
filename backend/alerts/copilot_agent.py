@@ -1,7 +1,7 @@
 # backend/alerts/copilot_agent.py
 import os
 import json
-from groq import Groq
+from groq import Groq, BadRequestError
 
 # Le client Groq est instancié à la demande (pas au chargement du module) :
 # si GROQ_API_KEY n'est pas configurée, on veut une erreur claire au moment
@@ -34,7 +34,7 @@ TOOLS = [
                         "type": "string",
                         "description": "Type d'attaque: DoS, R2L, Probe, Normal, Behavioral, Anomalie"
                     },
-                    "limit": {"type": "integer", "description": "Nombre d'alertes (max 20)"},
+                    "limit": {"type": ["integer", "string"], "description": "Nombre d'alertes (max 20). Doit être un entier, ex: 20"},
                     "severity": {"type": "string", "description": "LOW, MEDIUM, HIGH, CRITICAL"}
                 }
             }
@@ -96,7 +96,11 @@ def execute_tool(tool_name, tool_args, org):
             qs = qs.filter(attack_type=tool_args["attack_type"])
         if tool_args.get("severity"):
             qs = qs.filter(severity=tool_args["severity"])
-        limit = min(tool_args.get("limit", 10), 20)
+        try:
+            limit = int(tool_args.get("limit", 10))
+        except (TypeError, ValueError):
+            limit = 10
+        limit = min(limit, 20)
         alerts = qs.order_by("-detected_at")[:limit]
         return [
             {
@@ -282,13 +286,29 @@ def run_agent(user_message: str, org, conversation_history: list = None):
     client = _get_client()
 
     # Premier appel Groq
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        tools=TOOLS,
-        tool_choice="auto",
-        max_tokens=1024
-    )
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            tools=TOOLS,
+            tool_choice="auto",
+            max_tokens=1024
+        )
+    except BadRequestError as e:
+        if "tool_use_failed" in str(e):
+            # Retry une fois sans tools : le modèle répond en texte simple
+            # plutôt que de planter toute la conversation.
+            messages.append({
+                "role": "system",
+                "content": "Réponds en texte simple sans utiliser d'outil, le précédent appel a échoué."
+            })
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                max_tokens=1024
+            )
+        else:
+            raise
 
     msg = response.choices[0].message
 
