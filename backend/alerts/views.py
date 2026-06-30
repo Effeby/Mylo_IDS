@@ -448,6 +448,7 @@ class AlertListView(APIView):
         if date_from:     qs = qs.filter(detected_at__date__gte=date_from)
         if date_to:       qs = qs.filter(detected_at__date__lte=date_to)
 
+        qs = qs.order_by('-detected_at')
         return Response([_serialize_alert(a) for a in qs[:limit]])
 
 
@@ -554,22 +555,16 @@ class AnalyzeView(APIView):
         except Exception as e:
             return Response({'error': f'FastAPI indisponible: {e}'}, status=503)
 
-        # IP whitelistée → on ignore seulement les alertes faibles ou Normal.
-        # Une vraie attaque à forte confiance crée quand même l'alerte (cf.
-        # tag 'whitelisted_source' plus bas) pour détecter une IP de confiance
-        # compromise plutôt que de l'ignorer silencieusement.
-        if is_whitelisted and (
-            not prediction.get('is_attack', False)
-            or prediction.get('attack_type', 'Normal') == 'Normal'
-            or prediction.get('attack_confidence', 0) < WHITELIST_BYPASS_CONFIDENCE
-        ):
-            return Response({
-                'is_attack': False, 'binary_label': 'Normal',
-                'binary_confidence': 0.0, 'attack_type': 'Normal',
-                'attack_confidence': 1.0, 'severity': 'LOW',
-                'alert_status': 'Ignorée', 'src_ip': src_ip,
-                'dst_ip': dst_ip, 'whitelisted': True,
-            })
+        # IP whitelistée → on n'ignore plus l'alerte (elle reste visible dans
+        # le dashboard), mais on saute les notifications et le blocage auto
+        # tant que la confiance reste sous le seuil de bypass. Une vraie
+        # attaque à forte confiance suit le flux normal (notifs + blocage)
+        # pour détecter une IP de confiance compromise plutôt que de
+        # l'ignorer silencieusement.
+        skip_notifications_and_block = (
+            is_whitelisted
+            and prediction.get('attack_confidence', 0) < WHITELIST_BYPASS_CONFIDENCE
+        )
 
         asset = get_asset_for_ip(org, dst_ip) or get_asset_for_ip(org, src_ip)
         detection_score = compute_detection_score(prediction)
@@ -619,7 +614,7 @@ class AnalyzeView(APIView):
             source = traffic_data.get('source', 'scapy'),
         )
 
-        if prediction.get('is_attack') and severity in ('HIGH', 'CRITICAL', 'MEDIUM'):
+        if not skip_notifications_and_block and prediction.get('is_attack') and severity in ('HIGH', 'CRITICAL', 'MEDIUM'):
             s = IDSSettings.get(org)
             if s.notif_enabled:
                 severity_order = {'CRITICAL': 3, 'HIGH': 2, 'MEDIUM': 1, 'LOW': 0}
@@ -651,7 +646,8 @@ class AnalyzeView(APIView):
 
         action = None
         ids = IDSSettings.get(org)
-        if (ids.auto_block_enabled
+        if (not skip_notifications_and_block
+                and ids.auto_block_enabled
                 and prediction.get('is_attack')
                 and prediction.get('binary_confidence', 0) >= ids.auto_block_threshold
                 and alert_status == 'Nouvelle'):
