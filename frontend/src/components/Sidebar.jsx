@@ -70,7 +70,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
   return (
     <aside style={{
       width: isMobile ? SIDEBAR_WIDTH : (rail ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH),
-      minHeight: '100vh', background: 'var(--bg-card)',
+      height: '100vh', background: 'var(--bg-card)',
       borderRight: '1px solid var(--border-color)', display: 'flex',
       flexDirection: 'column', padding: '24px 0', flexShrink: 0,
       boxShadow: 'var(--shadow-sm)',
@@ -84,6 +84,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
     }}>
       {/* Logo + toggle — toujours sur la même ligne, repliée ou non */}
       <div style={{
+        flexShrink: 0,
         padding: rail ? '0 6px 16px' : '0 24px 24px', borderBottom: '1px solid var(--border-color)',
         display: 'flex', alignItems: 'center',
         justifyContent: rail ? 'center' : 'space-between',
@@ -152,7 +153,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1, padding: '16px 12px' }}>
+      <nav style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 12px' }}>
         {visibleNav.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to} to={to} title={rail ? label : undefined}
@@ -174,7 +175,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
       </nav>
 
       {/* Copilot */}
-      <div style={{ padding: rail ? '0 8px 16px' : '0 12px 16px' }}>
+      <div style={{ flexShrink: 0, padding: rail ? '0 8px 16px' : '0 12px 16px' }}>
         <button onClick={onCopilot} title={rail ? 'Mylo Copilot' : undefined} style={{
           width: '100%', padding: rail ? '10px 0' : '10px 12px', borderRadius: 8,
           background: 'rgba(59,130,246,0.1)', border: '1px solid #3B82F6',
@@ -187,7 +188,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
       </div>
 
       {/* User + Logout */}
-      <div style={{ padding: '0 12px', borderTop: '1px solid var(--border-color)', paddingTop: 12 }}>
+      <div style={{ flexShrink: 0, padding: '0 12px', borderTop: '1px solid var(--border-color)', paddingTop: 12 }}>
         {!rail && (
           <div style={{ padding: '8px 12px', marginBottom: 4 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

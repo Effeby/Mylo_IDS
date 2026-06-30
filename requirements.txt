@@ -45,5 +45,6 @@ pyotp==2.9.0
 qrcode==7.4.2
 
 httpx==0.27.0
-groq==0.11.0
 
+groq==1.5.0
+distro==1.9.0
