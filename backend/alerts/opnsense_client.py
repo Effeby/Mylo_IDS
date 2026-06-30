@@ -33,7 +33,7 @@ class OPNsenseClient:
             self.api_key    = getattr(settings, 'OPNSENSE_API_KEY', '')
             self.api_secret = getattr(settings, 'OPNSENSE_API_SECRET', '')
 
-        self.alias_name = "mylo_blocked_ips"
+        self.alias_name = "mylo_blocklist"
         self.timeout    = 5
 
     def _auth(self):

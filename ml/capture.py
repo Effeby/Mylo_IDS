@@ -70,7 +70,7 @@ CAPTURE_AGENT_SECRET = os.environ.get("CAPTURE_AGENT_SECRET", "")
 OPNSENSE_URL         = os.environ.get("OPNSENSE_URL", "https://172.16.1.1").rstrip('/')
 OPNSENSE_API_KEY     = os.environ.get("OPNSENSE_API_KEY", "")
 OPNSENSE_API_SECRET  = os.environ.get("OPNSENSE_API_SECRET", "")
-OPNSENSE_ALIAS_NAME  = "mylo_blocked_ips"
+OPNSENSE_ALIAS_NAME  = "mylo_blocklist"
 
 PROTO_MAP = {'TCP': 2, 'UDP': 1, 'ICMP': 0, 'OTHER': 2}
 FLAG_MAP  = {'S': 2, 'SA': 4, 'A': 10, 'FA': 6, 'R': 8, 'PA': 24}
