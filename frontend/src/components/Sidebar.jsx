@@ -123,41 +123,33 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: rail ? 6 : 8, flexShrink: 0, ...(rail ? { marginTop: 8 } : {}) }}>
-          {!rail && <ThemeToggle style={{ width: 28, height: 28, borderRadius: 7 }} />}
-          {isMobile ? (
-            <button
-              onClick={onCloseMobile}
-              aria-label="Fermer le menu"
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 6, flexShrink: 0, transition: 'color 0.18s' }}
-            >
-              <X size={20} />
-            </button>
-          ) : (
-            <button
-              onClick={onToggleCollapse}
-              aria-label={rail ? 'Agrandir le menu' : 'Réduire le menu'}
-              title={rail ? 'Agrandir le menu' : 'Réduire le menu'}
-              style={{
-                width: rail ? 22 : 28, height: rail ? 22 : 28, borderRadius: 7, flexShrink: 0,
-                border: '1px solid var(--border-color)', background: 'var(--bg-elevated)',
-                color: 'var(--text-secondary)', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.18s, color 0.18s, border-color 0.18s, width 0.22s ease, height 0.22s ease',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#3B82F6'; e.currentTarget.style.borderColor = '#3B82F6' }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
-            >
-              {rail ? <ChevronRight size={13} /> : <ChevronLeft size={15} />}
-            </button>
-          )}
-        </div>
+        {isMobile ? (
+          <button
+            onClick={onCloseMobile}
+            aria-label="Fermer le menu"
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 6, flexShrink: 0, transition: 'color 0.18s' }}
+          >
+            <X size={20} />
+          </button>
+        ) : (
+          <button
+            onClick={onToggleCollapse}
+            aria-label={rail ? 'Agrandir le menu' : 'Réduire le menu'}
+            title={rail ? 'Agrandir le menu' : 'Réduire le menu'}
+            style={{
+              width: rail ? 22 : 28, height: rail ? 22 : 28, borderRadius: 7, flexShrink: 0,
+              border: '1px solid var(--border-color)', background: 'var(--bg-elevated)',
+              color: 'var(--text-secondary)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.18s, color 0.18s, border-color 0.18s, width 0.22s ease, height 0.22s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#3B82F6'; e.currentTarget.style.borderColor = '#3B82F6' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
+          >
+            {rail ? <ChevronRight size={13} /> : <ChevronLeft size={15} />}
+          </button>
+        )}
       </div>
-      {rail && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
-          <ThemeToggle style={{ width: 28, height: 28, borderRadius: 7 }} />
-        </div>
-      )}
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: '16px 12px' }}>
@@ -206,6 +198,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
             </div>
           </div>
         )}
+        <ThemeToggle variant="row" rail={rail} />
         <button onClick={handleLogout} title={rail ? 'Déconnexion' : undefined} style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 12,
           justifyContent: rail ? 'center' : 'flex-start',

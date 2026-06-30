@@ -1,9 +1,33 @@
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.jsx';
 
-export default function ThemeToggle({ style = {} }) {
+// variant="icon" — boxed icon button (standalone pages: Login, Register, ...)
+// variant="row"  — full-width ghost row with label, matching nav/logout items (Sidebar footer)
+export default function ThemeToggle({ style = {}, variant = 'icon', rail = false }) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
+  const label = isDark ? 'Thème clair' : 'Thème sombre';
+
+  if (variant === 'row') {
+    return (
+      <button
+        onClick={toggleTheme}
+        title={rail ? label : undefined}
+        aria-label="Changer de thème"
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+          justifyContent: rail ? 'center' : 'flex-start',
+          padding: '10px 12px', borderRadius: 8,
+          background: 'none', border: 'none',
+          color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer',
+          transition: 'color 0.18s',
+          ...style,
+        }}
+      >
+        {isDark ? <Sun size={18} /> : <Moon size={18} />} {!rail && label}
+      </button>
+    );
+  }
 
   return (
     <button
