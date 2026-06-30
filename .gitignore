@@ -53,4 +53,4 @@ Thumbs.db
 secrets.json
 .env.capture
 
-</.vscode/
+</.vscode/ml/models/*.pkl
