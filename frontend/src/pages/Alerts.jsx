@@ -15,8 +15,8 @@ const STATUS_DISPLAY = {
   investigating:  { label: 'En cours',     color: '#EAB308' },
   confirmed:      { label: 'Confirmée',    color: '#EF4444' },
   resolved:       { label: 'Résolue',      color: '#22C55E' },
-  false_positive: { label: 'Faux positif', color: '#64748B' },
-  ignored:        { label: 'Ignorée',      color: '#475569' },
+  false_positive: { label: 'Faux positif', color: 'var(--text-tertiary)' },
+  ignored:        { label: 'Ignorée',      color: 'var(--text-muted)' },
   normal:         { label: 'Normal',       color: '#22C55E' },
 }
 
@@ -227,14 +227,14 @@ export default function Alerts() {
   )
 
   return (
-    <div className="mylo-page" style={{ color:'#F8FAFC', position:'relative' }}>
+    <div className="mylo-page" style={{ color:'var(--text-primary)', position:'relative' }}>
 
       {riverFeedback && (
         <div className="mylo-floating" style={{
           position:'fixed', bottom:32, left:'50%', transform:'translateX(-50%)',
           background:'#1E3A5F', border:'1px solid #3B82F6', borderRadius:10,
           padding:'12px 24px', color:'#93C5FD', fontSize:13, fontWeight:600,
-          zIndex:9999, boxShadow:'0 4px 24px rgba(0,0,0,0.4)',
+          zIndex:9999, boxShadow:'var(--shadow-md)',
         }}>🧠 {riverFeedback}</div>
       )}
 
@@ -242,14 +242,14 @@ export default function Alerts() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
           <h1 style={{ margin:0, fontSize:22, fontWeight:800 }}>Alertes</h1>
-          <p style={{ margin:'4px 0 0', color:'#94A3B8', fontSize:13 }}>
+          <p style={{ margin:'4px 0 0', color:'var(--text-secondary)', fontSize:13 }}>
             {filteredAlerts.length} alerte{filteredAlerts.length !== 1 ? 's' : ''}
             {hasActiveFilters ? ' (filtrées)' : ` — ${getOrganisationName()}`}
           </p>
         </div>
         <button onClick={load} style={{
-          padding:'8px 16px', borderRadius:8, border:'1px solid #1E2D4F',
-          background:'transparent', color:'#94A3B8', cursor:'pointer',
+          padding:'8px 16px', borderRadius:8, border:'1px solid var(--border-color)',
+          background:'transparent', color:'var(--text-secondary)', cursor:'pointer',
           display:'flex', alignItems:'center', gap:6, fontSize:13,
         }}>
           <RefreshCw size={14} /> Actualiser
@@ -259,15 +259,15 @@ export default function Alerts() {
       {/* Filtres */}
       <div style={{ display:'flex', gap:10, marginBottom:10, flexWrap:'wrap', alignItems:'center' }}>
         <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{
-          padding:'8px 12px', borderRadius:8, background:'#0F1629',
-          border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:13,
+          padding:'8px 12px', borderRadius:8, background:'var(--bg-card)',
+          border:'1px solid var(--border-color)', color:'var(--text-primary)', fontSize:13,
         }}>
           {TYPES.map(t => <option key={t} value={t}>{t || 'Tous les types'}</option>)}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{
-          padding:'8px 12px', borderRadius:8, background:'#0F1629',
-          border:`1px solid ${filterStatus ? '#EF4444' : '#1E2D4F'}`,
-          color: filterStatus ? '#EF4444' : '#F8FAFC', fontSize:13,
+          padding:'8px 12px', borderRadius:8, background:'var(--bg-card)',
+          border:`1px solid ${filterStatus ? '#EF4444' : 'var(--border-color)'}`,
+          color: filterStatus ? '#EF4444' : 'var(--text-primary)', fontSize:13,
         }}>
           <option value="">Tous les statuts</option>
           <option value="new">Nouvelles</option>
@@ -278,9 +278,9 @@ export default function Alerts() {
           <option value="false_positive">Faux positifs</option>
         </select>
         <select value={filterSource} onChange={e => setFilterSource(e.target.value)} style={{
-          padding:'8px 12px', borderRadius:8, background:'#0F1629',
-          border:`1px solid ${filterSource ? '#3B82F6' : '#1E2D4F'}`,
-          color: filterSource ? '#3B82F6' : '#F8FAFC', fontSize:13,
+          padding:'8px 12px', borderRadius:8, background:'var(--bg-card)',
+          border:`1px solid ${filterSource ? '#3B82F6' : 'var(--border-color)'}`,
+          color: filterSource ? '#3B82F6' : 'var(--text-primary)', fontSize:13,
         }}>
           <option value="">Toutes sources</option>
           <option value="scapy">Scapy (capture)</option>
@@ -288,15 +288,15 @@ export default function Alerts() {
         </select>
         <input value={filterIP} onChange={e => setFilterIP(e.target.value)}
           placeholder="Filtrer par IP..." onKeyDown={e => e.key === 'Enter' && load()}
-          style={{ padding:'8px 14px', borderRadius:8, background:'#0F1629', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:13, outline:'none', flex:'1 1 160px', maxWidth:220, minWidth:0 }} />
+          style={{ padding:'8px 14px', borderRadius:8, background:'var(--bg-card)', border:'1px solid var(--border-color)', color:'var(--text-primary)', fontSize:13, outline:'none', flex:'1 1 160px', maxWidth:220, minWidth:0 }} />
         <button onClick={load} style={{ padding:'8px 14px', borderRadius:8, background:'#3B82F6', border:'none', color:'#fff', cursor:'pointer' }}>
           <Filter size={14} />
         </button>
         <button onClick={() => setShowDateFilters(v => !v)} style={{
           padding:'8px 14px', borderRadius:8,
           background: showDateFilters ? 'rgba(59,130,246,0.15)' : 'transparent',
-          border:`1px solid ${showDateFilters ? '#3B82F6' : '#1E2D4F'}`,
-          color: showDateFilters ? '#3B82F6' : '#94A3B8',
+          border:`1px solid ${showDateFilters ? '#3B82F6' : 'var(--border-color)'}`,
+          color: showDateFilters ? '#3B82F6' : 'var(--text-secondary)',
           cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontSize:12,
         }}>
           <Calendar size={13} /> Date / Heure
@@ -304,25 +304,25 @@ export default function Alerts() {
         {hasActiveFilters && (
           <button onClick={resetFilters} style={{
             padding:'8px 14px', borderRadius:8, background:'transparent',
-            border:'1px solid #1E2D4F', color:'#94A3B8', cursor:'pointer', fontSize:12,
+            border:'1px solid var(--border-color)', color:'var(--text-secondary)', cursor:'pointer', fontSize:12,
             display:'flex', alignItems:'center', gap:5,
           }}><X size={12} /> Réinitialiser</button>
         )}
       </div>
 
       {showDateFilters && (
-        <div style={{ display:'flex', gap:12, marginBottom:12, flexWrap:'wrap', padding:'12px 16px', background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:10, alignItems:'center' }}>
+        <div style={{ display:'flex', gap:12, marginBottom:12, flexWrap:'wrap', padding:'12px 16px', background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:10, alignItems:'center' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <span style={{ color:'#64748B', fontSize:12, whiteSpace:'nowrap' }}>Du</span>
-            <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'#0A0E1A', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:12, outline:'none' }} />
-            <input type="time" value={filterTimeFrom} onChange={e => setFilterTimeFrom(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'#0A0E1A', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:12, outline:'none' }} />
+            <span style={{ color:'var(--text-tertiary)', fontSize:12, whiteSpace:'nowrap' }}>Du</span>
+            <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'var(--bg-primary)', border:'1px solid var(--border-color)', color:'var(--text-primary)', fontSize:12, outline:'none' }} />
+            <input type="time" value={filterTimeFrom} onChange={e => setFilterTimeFrom(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'var(--bg-primary)', border:'1px solid var(--border-color)', color:'var(--text-primary)', fontSize:12, outline:'none' }} />
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <span style={{ color:'#64748B', fontSize:12, whiteSpace:'nowrap' }}>Au</span>
-            <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'#0A0E1A', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:12, outline:'none' }} />
-            <input type="time" value={filterTimeTo} onChange={e => setFilterTimeTo(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'#0A0E1A', border:'1px solid #1E2D4F', color:'#F8FAFC', fontSize:12, outline:'none' }} />
+            <span style={{ color:'var(--text-tertiary)', fontSize:12, whiteSpace:'nowrap' }}>Au</span>
+            <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'var(--bg-primary)', border:'1px solid var(--border-color)', color:'var(--text-primary)', fontSize:12, outline:'none' }} />
+            <input type="time" value={filterTimeTo} onChange={e => setFilterTimeTo(e.target.value)} style={{ padding:'6px 10px', borderRadius:6, background:'var(--bg-primary)', border:'1px solid var(--border-color)', color:'var(--text-primary)', fontSize:12, outline:'none' }} />
           </div>
-          <span style={{ color:'#475569', fontSize:11 }}>{filteredAlerts.length} résultat{filteredAlerts.length !== 1 ? 's' : ''}</span>
+          <span style={{ color:'var(--text-muted)', fontSize:11 }}>{filteredAlerts.length} résultat{filteredAlerts.length !== 1 ? 's' : ''}</span>
         </div>
       )}
 
@@ -340,24 +340,24 @@ export default function Alerts() {
       )}
 
       {/* Table */}
-      <div className="mylo-table-scroll" style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12 }}>
+      <div className="mylo-table-scroll" style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12 }}>
         <div style={{ minWidth:980 }}>
         <div style={{
           display:'grid', gridTemplateColumns:'140px 1fr 1fr 1fr 90px 1fr 1fr 130px',
-          padding:'12px 20px', borderBottom:'1px solid #1E2D4F',
-          color:'#475569', fontSize:11, fontWeight:700, letterSpacing:'0.05em',
+          padding:'12px 20px', borderBottom:'1px solid var(--border-color)',
+          color:'var(--text-muted)', fontSize:11, fontWeight:700, letterSpacing:'0.05em',
         }}>
           <span>DATE / HEURE</span><span>IP SOURCE</span><span>TYPE</span>
           <span>SÉVÉRITÉ</span><span>BYTES</span><span>CONFIANCE</span><span>STATUT</span><span>ACTION</span>
         </div>
         {loading ? (
-          <div style={{ padding:40, textAlign:'center', color:'#475569' }}>Chargement...</div>
+          <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>Chargement...</div>
         ) : filteredAlerts.length === 0 ? (
-          <div style={{ padding:40, textAlign:'center', color:'#475569' }}>
+          <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>
             <Bell size={32} style={{ marginBottom:8, opacity:0.5 }} />
             <p style={{ margin:0 }}>Aucune alerte trouvée</p>
             {hasActiveFilters && (
-              <button onClick={resetFilters} style={{ marginTop:12, padding:'6px 14px', borderRadius:6, background:'transparent', border:'1px solid #1E2D4F', color:'#94A3B8', cursor:'pointer', fontSize:12 }}>Effacer les filtres</button>
+              <button onClick={resetFilters} style={{ marginTop:12, padding:'6px 14px', borderRadius:6, background:'transparent', border:'1px solid var(--border-color)', color:'var(--text-secondary)', cursor:'pointer', fontSize:12 }}>Effacer les filtres</button>
             )}
           </div>
         ) : filteredAlerts.map(a => {
@@ -365,29 +365,29 @@ export default function Alerts() {
           return (
             <div key={a.id} onClick={() => { setSelected(a); setReplayResult(null) }} style={{
               display:'grid', gridTemplateColumns:'140px 1fr 1fr 1fr 90px 1fr 1fr 130px',
-              padding:'12px 20px', borderBottom:'1px solid #0A0E1A',
+              padding:'12px 20px', borderBottom:'1px solid var(--bg-primary)',
               fontSize:13, alignItems:'center', cursor:'pointer',
               background: selected?.id === a.id ? 'rgba(59,130,246,0.08)' : a.status === 'new' ? 'rgba(239,68,68,0.03)' : 'transparent',
               transition:'background 0.15s',
             }}>
-              <span style={{ color:'#94A3B8', fontFamily:'monospace', fontSize:11 }}>
+              <span style={{ color:'var(--text-secondary)', fontFamily:'monospace', fontSize:11 }}>
                 {(() => { const f = formatDate(a.detected_at); return (
-                  <>{f.line1 && <div style={{ color:'#F8FAFC', fontWeight:500 }}>{f.line1}</div>}<div style={{ color:'#94A3B8' }}>{f.line2}</div></>
+                  <>{f.line1 && <div style={{ color:'var(--text-primary)', fontWeight:500 }}>{f.line1}</div>}<div style={{ color:'var(--text-secondary)' }}>{f.line2}</div></>
                 )})()}
               </span>
-              <span style={{ color:'#64748B', fontFamily:'monospace', fontSize:11, display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ color:'var(--text-tertiary)', fontFamily:'monospace', fontSize:11, display:'flex', alignItems:'center', gap:8 }}>
                 <span>{a.src_ip || '—'}</span>
                 <span style={{ fontSize:11, padding:'2px 6px', borderRadius:8, display:'inline-flex', alignItems:'center', gap:6, background: a.source === 'wazuh' ? 'rgba(124,58,237,0.12)' : 'rgba(99,102,241,0.08)', color: a.source === 'wazuh' ? '#7C3AED' : '#6366F1', border: '1px solid rgba(255,255,255,0.02)' }} title={a.source || 'scapy'}>
                   {a.source === 'wazuh' ? <Shield size={12} color="#7C3AED" /> : <svg width="12" height="12" viewBox="0 0 8 8" style={{borderRadius:6, display:'block'}}><circle cx="4" cy="4" r="4" fill="#6366F1"/></svg>}
                   <span style={{ lineHeight:1 }}>{a.source || 'scapy'}</span>
                 </span>
               </span>
-              <span style={{ color:'#F8FAFC', fontWeight:600 }}>{a.attack_type}</span>
+              <span style={{ color:'var(--text-primary)', fontWeight:600 }}>{a.attack_type}</span>
               <AlertBadge severity={a.severity} />
-              <span style={{ color:'#64748B', fontFamily:'monospace', fontSize:11 }}>
+              <span style={{ color:'var(--text-tertiary)', fontFamily:'monospace', fontSize:11 }}>
                 {a.src_bytes > 0 ? (a.src_bytes > 1024 ? `${(a.src_bytes/1024).toFixed(1)}K` : `${a.src_bytes}B`) : '—'}
               </span>
-              <span style={{ color:'#94A3B8', fontFamily:'monospace' }}>{(a.attack_confidence * 100).toFixed(1)}%</span>
+              <span style={{ color:'var(--text-secondary)', fontFamily:'monospace' }}>{(a.attack_confidence * 100).toFixed(1)}%</span>
               <span style={{ fontSize:11, fontWeight:600, color:s.color }}>{s.label}</span>
               <button onClick={e => { e.stopPropagation(); handleBlock(a.src_ip) }} style={{
                 padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600,
@@ -404,12 +404,12 @@ export default function Alerts() {
       {selected && (
         <div className="mylo-panel" style={{
           position:'fixed', top:0, right:0, bottom:0, width:'min(440px, 100vw)',
-          background:'#0A0E1A', borderLeft:'1px solid #1E2D4F',
+          background:'var(--bg-primary)', borderLeft:'1px solid var(--border-color)',
           padding:28, overflowY:'auto', zIndex:100,
         }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
             <h2 style={{ margin:0, fontSize:16, fontWeight:800 }}>Alerte #{selected.id}</h2>
-            <button onClick={() => setSelected(null)} style={{ background:'none',border:'none',color:'#94A3B8',cursor:'pointer',fontSize:20 }}>✕</button>
+            <button onClick={() => setSelected(null)} style={{ background:'none',border:'none',color:'var(--text-secondary)',cursor:'pointer',fontSize:20 }}>✕</button>
           </div>
           <div style={{
             padding:'10px 14px', borderRadius:8, marginBottom:20,
@@ -459,11 +459,11 @@ export default function Alerts() {
               {Array.isArray(selected.features.anomalies) && selected.features.anomalies.length > 0 && (
                 <div style={{ display:'grid', gap:8, marginTop:8 }}>
                   {selected.features.anomalies.map((a, idx) => (
-                    <div key={idx} style={{ padding:'10px', borderRadius:10, background:'#0F1629', border:'1px solid #1E2D4F' }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:'#F8FAFC' }}>{a.type || `Anomalie ${idx + 1}`}</div>
-                      <div style={{ fontSize:12, color:'#94A3B8', marginTop:4 }}>{a.detail || JSON.stringify(a)}</div>
-                      {a.z_score !== undefined && <div style={{ fontSize:11, color:'#64748B', marginTop:4 }}>Z-score: {a.z_score}</div>}
-                      {a.severity && <div style={{ fontSize:11, color:'#64748B' }}>Sévérité: {a.severity}</div>}
+                    <div key={idx} style={{ padding:'10px', borderRadius:10, background:'var(--bg-card)', border:'1px solid var(--border-color)' }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:'var(--text-primary)' }}>{a.type || `Anomalie ${idx + 1}`}</div>
+                      <div style={{ fontSize:12, color:'var(--text-secondary)', marginTop:4 }}>{a.detail || JSON.stringify(a)}</div>
+                      {a.z_score !== undefined && <div style={{ fontSize:11, color:'var(--text-tertiary)', marginTop:4 }}>Z-score: {a.z_score}</div>}
+                      {a.severity && <div style={{ fontSize:11, color:'var(--text-tertiary)' }}>Sévérité: {a.severity}</div>}
                     </div>
                   ))}
                 </div>
@@ -473,7 +473,7 @@ export default function Alerts() {
 
           {/* ── ATTACK REPLAY ─────────────────────────────────────── */}
           <Section title="Attack Replay — Rejouer avec le modèle actuel">
-            <p style={{ color:'#64748B', fontSize:12, margin:'0 0 12px' }}>
+            <p style={{ color:'var(--text-tertiary)', fontSize:12, margin:'0 0 12px' }}>
               Rejoue les features de cette alerte dans XGBoost pour voir si le modèle a évolué depuis River.
             </p>
             <button
@@ -493,16 +493,16 @@ export default function Alerts() {
 
             {/* Résultat du replay */}
             {replayResult && !replayResult.error && (
-              <div style={{ marginTop:12, padding:'14px', borderRadius:8, background:'#0F1629', border:'1px solid #1E2D4F' }}>
-                <div style={{ fontSize:11, color:'#475569', fontWeight:700, marginBottom:10, letterSpacing:'0.05em' }}>
+              <div style={{ marginTop:12, padding:'14px', borderRadius:8, background:'var(--bg-card)', border:'1px solid var(--border-color)' }}>
+                <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:700, marginBottom:10, letterSpacing:'0.05em' }}>
                   RÉSULTAT DU REPLAY
                 </div>
                 <div className="mylo-grid-2" style={{ gap:8 }}>
                   {/* Original */}
-                  <div style={{ padding:'10px', borderRadius:6, background:'rgba(100,116,139,0.1)', border:'1px solid #1E2D4F' }}>
-                    <div style={{ fontSize:10, color:'#475569', marginBottom:6, fontWeight:700 }}>ORIGINAL</div>
-                    <div style={{ fontSize:14, fontWeight:800, color:'#94A3B8' }}>{replayResult.original.type}</div>
-                    <div style={{ fontSize:11, color:'#64748B', marginTop:2 }}>{(replayResult.original.confidence*100).toFixed(1)}% confiance</div>
+                  <div style={{ padding:'10px', borderRadius:6, background:'rgba(100,116,139,0.1)', border:'1px solid var(--border-color)' }}>
+                    <div style={{ fontSize:10, color:'var(--text-muted)', marginBottom:6, fontWeight:700 }}>ORIGINAL</div>
+                    <div style={{ fontSize:14, fontWeight:800, color:'var(--text-secondary)' }}>{replayResult.original.type}</div>
+                    <div style={{ fontSize:11, color:'var(--text-tertiary)', marginTop:2 }}>{(replayResult.original.confidence*100).toFixed(1)}% confiance</div>
                   </div>
                   {/* Replay */}
                   <div style={{
@@ -516,7 +516,7 @@ export default function Alerts() {
                     <div style={{ fontSize:14, fontWeight:800, color: replayResult.replayed.is_attack ? '#EF4444' : '#22C55E' }}>
                       {replayResult.replayed.type}
                     </div>
-                    <div style={{ fontSize:11, color:'#64748B', marginTop:2 }}>{(replayResult.replayed.confidence*100).toFixed(1)}% confiance</div>
+                    <div style={{ fontSize:11, color:'var(--text-tertiary)', marginTop:2 }}>{(replayResult.replayed.confidence*100).toFixed(1)}% confiance</div>
                   </div>
                 </div>
                 {replayResult.improved && (
@@ -548,12 +548,12 @@ export default function Alerts() {
           )}
 
           <Section title="Feedback pour River (apprentissage)">
-            <p style={{ color:'#64748B', fontSize:12, margin:'0 0 12px' }}>Ton feedback entraîne River à mieux détecter.</p>
+            <p style={{ color:'var(--text-tertiary)', fontSize:12, margin:'0 0 12px' }}>Ton feedback entraîne River à mieux détecter.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               <button onClick={() => handleStatus(selected.id, 'false_positive')} style={{
                 padding:'10px 14px', borderRadius:8, fontSize:13, fontWeight:700,
-                background:'rgba(100,116,139,0.15)', border:'1px solid #64748B',
-                color:'#94A3B8', cursor:'pointer', display:'flex', alignItems:'center', gap:8,
+                background:'rgba(100,116,139,0.15)', border:'1px solid var(--text-tertiary)',
+                color:'var(--text-secondary)', cursor:'pointer', display:'flex', alignItems:'center', gap:8,
               }}><XCircle size={15} /> Faux positif — River apprend "Normal"</button>
               <button onClick={() => handleStatus(selected.id, 'confirmed')} style={{
                 padding:'10px 14px', borderRadius:8, fontSize:13, fontWeight:700,
@@ -584,7 +584,7 @@ export default function Alerts() {
 function Section({ title, children }) {
   return (
     <div style={{ marginBottom:24 }}>
-      <div style={{ fontSize:11, color:'#475569', fontWeight:700, marginBottom:10, letterSpacing:'0.05em' }}>
+      <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:700, marginBottom:10, letterSpacing:'0.05em' }}>
         {title.toUpperCase()}
       </div>
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>{children}</div>
@@ -607,8 +607,8 @@ function Row({ label, value, mono }) {
 
   return (
     <div style={{ display:'flex', justifyContent:'space-between', fontSize:13 }}>
-      <span style={{ color:'#64748B' }}>{label}</span>
-      <span style={{ color:'#F8FAFC', fontFamily: mono ? 'monospace' : 'inherit', fontSize: mono ? 12 : 13 }}>
+      <span style={{ color:'var(--text-tertiary)' }}>{label}</span>
+      <span style={{ color:'var(--text-primary)', fontFamily: mono ? 'monospace' : 'inherit', fontSize: mono ? 12 : 13 }}>
         {renderValue()}
       </span>
     </div>

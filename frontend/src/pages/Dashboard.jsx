@@ -60,7 +60,7 @@ export default function Dashboard() {
   }, [])
 
   if (loading) return (
-    <div style={{ padding:32, color:'#94A3B8', fontSize:14 }}>
+    <div style={{ padding:32, color:'var(--text-secondary)', fontSize:14 }}>
       Chargement du dashboard...
     </div>
   )
@@ -74,7 +74,7 @@ export default function Dashboard() {
   const newAlerts  = stats?.new_alerts || 0
 
   return (
-    <div className="mylo-page" style={{ color:'#F8FAFC' }}>
+    <div className="mylo-page" style={{ color:'var(--text-primary)' }}>
 
       {/* ── Header ── */}
       <div style={{ marginBottom:28 }}>
@@ -88,7 +88,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h1 style={{ margin:0, fontSize:22, fontWeight:800 }}>{getOrganisationName()} — Overview</h1>
-            <p style={{ margin:0, color:'#475569', fontSize:12 }}>
+            <p style={{ margin:0, color:'var(--text-muted)', fontSize:12 }}>
               Mylo IPS · Rafraîchissement auto toutes les 15s
             </p>
           </div>
@@ -104,13 +104,13 @@ export default function Dashboard() {
           { label:'Taux d\'attaque',  value:`${attackRate}%`,         color:'#F97316', icon:Zap },
         ].map(({ label, value, color, icon:Icon }) => (
           <div key={label} style={{
-            background:'#0F1629', border:'1px solid #1E2D4F',
+            background:'var(--bg-card)', border:'1px solid var(--border-color)',
             borderRadius:12, padding:'20px 24px',
           }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
               <div>
                 <div style={{ fontSize:28, fontWeight:800, color }}>{value}</div>
-                <div style={{ fontSize:12, color:'#94A3B8', marginTop:4 }}>{label}</div>
+                <div style={{ fontSize:12, color:'var(--text-secondary)', marginTop:4 }}>{label}</div>
               </div>
               <div style={{
                 width:40, height:40, borderRadius:10,
@@ -145,10 +145,10 @@ export default function Dashboard() {
       <div className="mylo-grid-3" style={{ gap:16, marginBottom:20 }}>
 
         {/* Mylo IPS */}
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12, padding:20 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
             <Shield size={16} color="#3B82F6" />
-            <span style={{ fontSize:12, fontWeight:700, color:'#94A3B8', letterSpacing:'0.05em' }}>
+            <span style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', letterSpacing:'0.05em' }}>
               Mylo IPS
             </span>
             <span style={{
@@ -157,51 +157,51 @@ export default function Dashboard() {
               background:'rgba(34,197,94,0.15)', color:'#22C55E',
             }}>● ACTIF</span>
           </div>
-          <div style={{ fontSize:12, color:'#64748B' }}>Modèle XGBoost 9 classes</div>
-          <div style={{ fontSize:12, color:'#64748B', marginTop:4 }}>
+          <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Modèle XGBoost 9 classes</div>
+          <div style={{ fontSize:12, color:'var(--text-tertiary)', marginTop:4 }}>
             Accuracy : <span style={{ color:'#3B82F6', fontWeight:600 }}>90.29%</span>
           </div>
-          <div style={{ fontSize:12, color:'#64748B', marginTop:4 }}>
-            Datasets : <span style={{ color:'#F8FAFC' }}>8 sources · 579K lignes</span>
+          <div style={{ fontSize:12, color:'var(--text-tertiary)', marginTop:4 }}>
+            Datasets : <span style={{ color:'var(--text-primary)' }}>8 sources · 579K lignes</span>
           </div>
         </div>
 
         {/* River */}
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12, padding:20 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
             <Brain size={16} color="#3B82F6" />
-            <span style={{ fontSize:12, fontWeight:700, color:'#94A3B8', letterSpacing:'0.05em' }}>
+            <span style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', letterSpacing:'0.05em' }}>
               RIVER — ONLINE LEARNING
             </span>
             <span style={{
               marginLeft:'auto', fontSize:10, fontWeight:700,
               padding:'2px 8px', borderRadius:20,
               background: river?.status === 'active' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-              color: river?.status === 'active' ? '#22C55E' : '#94A3B8',
+              color: river?.status === 'active' ? '#22C55E' : 'var(--text-secondary)',
             }}>
               {river?.status === 'active' ? '● ACTIF' : '○ ATTENTE'}
             </span>
           </div>
-          <div style={{ fontSize:12, color:'#64748B' }}>
-            Flux appris : <span style={{ color:'#F8FAFC', fontWeight:600 }}>
+          <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>
+            Flux appris : <span style={{ color:'var(--text-primary)', fontWeight:600 }}>
               {river?.total_learned?.toLocaleString() || 0}
             </span>
           </div>
-          <div style={{ fontSize:12, color:'#64748B', marginTop:4 }}>
+          <div style={{ fontSize:12, color:'var(--text-tertiary)', marginTop:4 }}>
             Accuracy : <span style={{ color:'#22C55E', fontWeight:600 }}>
               {river?.total_learned > 0 ? `${(river.accuracy*100).toFixed(1)}%` : 'N/A'}
             </span>
           </div>
-          <div style={{ fontSize:12, color:'#64748B', marginTop:4 }}>
-            Modèle : <span style={{ color:'#F8FAFC' }}>HoeffdingAdaptiveTree</span>
+          <div style={{ fontSize:12, color:'var(--text-tertiary)', marginTop:4 }}>
+            Modèle : <span style={{ color:'var(--text-primary)' }}>HoeffdingAdaptiveTree</span>
           </div>
         </div>
 
         {/* Sévérités */}
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12, padding:20 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
             <AlertTriangle size={16} color="#EF4444" />
-            <span style={{ fontSize:12, fontWeight:700, color:'#94A3B8', letterSpacing:'0.05em' }}>
+            <span style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', letterSpacing:'0.05em' }}>
               PAR SÉVÉRITÉ
             </span>
           </div>
@@ -217,9 +217,9 @@ export default function Dashboard() {
               <div key={k} style={{ marginBottom:6 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
                   <span style={{ fontSize:11, color: SEV_COLOR[k] }}>{label}</span>
-                  <span style={{ fontSize:11, color:'#64748B' }}>{val}</span>
+                  <span style={{ fontSize:11, color:'var(--text-tertiary)' }}>{val}</span>
                 </div>
-                <div style={{ height:4, background:'#1E2D4F', borderRadius:2 }}>
+                <div style={{ height:4, background:'var(--border-color)', borderRadius:2 }}>
                   <div style={{
                     height:'100%', borderRadius:2,
                     width:`${pct}%`, background: SEV_COLOR[k],
@@ -236,9 +236,9 @@ export default function Dashboard() {
       <div className="mylo-grid-responsive" style={{ '--cols': '1fr 1.5fr', gap:16, marginBottom:20 }}>
 
         {/* Types d'attaques */}
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12, padding:20 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <span style={{ fontSize:12, fontWeight:700, color:'#94A3B8', letterSpacing:'0.05em' }}>
+            <span style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', letterSpacing:'0.05em' }}>
               TYPES D'ATTAQUES
             </span>
             <button onClick={() => navigate('/stats')} style={{
@@ -249,7 +249,7 @@ export default function Dashboard() {
             </button>
           </div>
           {topTypes.length === 0 ? (
-            <div style={{ color:'#475569', fontSize:13, textAlign:'center', padding:'20px 0' }}>
+            <div style={{ color:'var(--text-muted)', fontSize:13, textAlign:'center', padding:'20px 0' }}>
               Aucune attaque détectée
             </div>
           ) : topTypes.map(([type, count]) => {
@@ -257,12 +257,12 @@ export default function Dashboard() {
             return (
               <div key={type} style={{ marginBottom:10 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                  <span style={{ fontSize:12, color: COLORS[type] || '#94A3B8', fontWeight:600 }}>
+                  <span style={{ fontSize:12, color: COLORS[type] || 'var(--text-secondary)', fontWeight:600 }}>
                     {type}
                   </span>
-                  <span style={{ fontSize:12, color:'#64748B' }}>{count} ({pct.toFixed(0)}%)</span>
+                  <span style={{ fontSize:12, color:'var(--text-tertiary)' }}>{count} ({pct.toFixed(0)}%)</span>
                 </div>
-                <div style={{ height:5, background:'#1E2D4F', borderRadius:3 }}>
+                <div style={{ height:5, background:'var(--border-color)', borderRadius:3 }}>
                   <div style={{
                     height:'100%', borderRadius:3,
                     width:`${pct}%`,
@@ -276,9 +276,9 @@ export default function Dashboard() {
         </div>
 
         {/* Dernières alertes */}
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12, padding:20 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <span style={{ fontSize:12, fontWeight:700, color:'#94A3B8', letterSpacing:'0.05em' }}>
+            <span style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', letterSpacing:'0.05em' }}>
               DERNIÈRES ALERTES
             </span>
             <button onClick={() => navigate('/alerts')} style={{
@@ -289,13 +289,13 @@ export default function Dashboard() {
             </button>
           </div>
           {recent.length === 0 ? (
-            <div style={{ color:'#475569', fontSize:13, textAlign:'center', padding:'20px 0' }}>
+            <div style={{ color:'var(--text-muted)', fontSize:13, textAlign:'center', padding:'20px 0' }}>
               Aucune alerte récente
             </div>
           ) : recent.map(a => (
             <div key={a.id} onClick={() => navigate('/alerts')} style={{
               display:'flex', alignItems:'center', gap:12,
-              padding:'9px 0', borderBottom:'1px solid #0A0E1A',
+              padding:'9px 0', borderBottom:'1px solid var(--bg-primary)',
               cursor:'pointer',
             }}>
               <div style={{
@@ -303,11 +303,11 @@ export default function Dashboard() {
                 background: a.is_attack ? (COLORS[a.attack_type] || '#EF4444') : '#22C55E',
               }} />
                 <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12, fontWeight:600, color: a.is_attack ? '#F8FAFC' : '#64748B' }}>
+                <div style={{ fontSize:12, fontWeight:600, color: a.is_attack ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
                   {a.attack_type}
                   {a.src_ip && (
                     <span style={{ display:'inline-flex', alignItems:'center', gap:8, marginLeft:8 }}>
-                      <span style={{ fontFamily:'monospace', color:'#475569', fontWeight:400, fontSize:11 }}>{a.src_ip}</span>
+                      <span style={{ fontFamily:'monospace', color:'var(--text-muted)', fontWeight:400, fontSize:11 }}>{a.src_ip}</span>
                       <span style={{ fontSize:11, padding:'2px 6px', borderRadius:8, display:'inline-flex', alignItems:'center', gap:6, background: a.source === 'wazuh' ? 'rgba(124,58,237,0.12)' : 'rgba(99,102,241,0.08)', color: a.source === 'wazuh' ? '#7C3AED' : '#6366F1' }} title={a.source || 'scapy'}>
                         {a.source === 'wazuh' ? <Shield size={12} color="#7C3AED" /> : <svg width="12" height="12" viewBox="0 0 8 8" style={{borderRadius:6, display:'block'}}><circle cx="4" cy="4" r="4" fill="#6366F1"/></svg>}
                         <span style={{ lineHeight:1 }}>{a.source || 'scapy'}</span>
@@ -315,7 +315,7 @@ export default function Dashboard() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize:11, color:'#475569', marginTop:1 }}>
+                <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:1 }}>
                   {formatDate(a.detected_at)}
                 </div>
               </div>
@@ -326,8 +326,8 @@ export default function Dashboard() {
       </div>
 
       {/* ── Actions rapides ── */}
-      <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:12, padding:20 }}>
-        <div style={{ fontSize:12, fontWeight:700, color:'#94A3B8', letterSpacing:'0.05em', marginBottom:14 }}>
+      <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12, padding:20 }}>
+        <div style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', letterSpacing:'0.05em', marginBottom:14 }}>
           ACTIONS RAPIDES
         </div>
         <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Shield, Eye, EyeOff } from 'lucide-react'
 import { login } from '../api/mylo'
+import ThemeToggle from '../components/ThemeToggle'
 
 
 export default function Login() {
@@ -58,21 +59,23 @@ export default function Login() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0A0E1A',
+      minHeight: '100vh', background: 'var(--bg-primary)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 16, boxSizing: 'border-box',
+      padding: 16, boxSizing: 'border-box', position: 'relative',
     }}>
       <div style={{
         position: 'absolute', inset: 0,
-        backgroundImage: 'radial-gradient(circle at 1px 1px, #1E2D4F 1px, transparent 0)',
+        backgroundImage: 'radial-gradient(circle at 1px 1px, var(--border-color) 1px, transparent 0)',
         backgroundSize: '40px 40px', opacity: 0.4,
       }} />
 
+      <ThemeToggle style={{ position: 'absolute', top: 20, right: 20 }} />
+
       <div style={{
         position: 'relative', width: '100%', maxWidth: 400, padding: 'clamp(20px, 8vw, 40px)',
-        background: '#0F1629', borderRadius: 20,
-        border: '1px solid #1E2D4F', boxSizing: 'border-box',
-        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+        background: 'var(--bg-card)', borderRadius: 20,
+        border: '1px solid var(--border-color)', boxSizing: 'border-box',
+        boxShadow: 'var(--shadow-lg)',
       }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
@@ -82,15 +85,15 @@ export default function Login() {
           }}>
             <Shield size={32} color="#fff" />
           </div>
-          <h1 style={{ color: '#F8FAFC', fontSize: 24, fontWeight: 800, margin: 0 }}>Mylo IPS</h1>
-          <p style={{ color: '#94A3B8', fontSize: 13, margin: '6px 0 0' }}>
+          <h1 style={{ color: 'var(--text-primary)', fontSize: 24, fontWeight: 800, margin: 0 }}>Mylo IPS</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '6px 0 0' }}>
             Intelligent Security Center
           </p>
         </div>
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>
+            <label style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>
               IDENTIFIANT
             </label>
             <input
@@ -100,14 +103,14 @@ export default function Login() {
               autoComplete="username"
               style={{
                 width: '100%', padding: '12px 16px', borderRadius: 8, fontSize: 14,
-                background: '#0A0E1A', border: '1px solid #1E2D4F',
-                color: '#F8FAFC', outline: 'none', boxSizing: 'border-box',
+                background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
               }}
             />
           </div>
 
           <div>
-            <label style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>
+            <label style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>
               MOT DE PASSE
             </label>
             <div style={{ position: 'relative' }}>
@@ -119,13 +122,13 @@ export default function Login() {
                 autoComplete="current-password"
                 style={{
                   width: '100%', padding: '12px 44px 12px 16px', borderRadius: 8, fontSize: 14,
-                  background: '#0A0E1A', border: '1px solid #1E2D4F',
-                  color: '#F8FAFC', outline: 'none', boxSizing: 'border-box',
+                  background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
                 }}
               />
               <button type="button" onClick={() => setShow(!show)} style={{
                 position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer',
+                background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
               }}>
                 {show ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -144,7 +147,7 @@ export default function Login() {
 
           <button type="submit" disabled={loading} style={{
             padding: '13px', borderRadius: 8, fontSize: 14, fontWeight: 700,
-            background: loading ? '#1E2D4F' : 'linear-gradient(135deg, #3B82F6, #1E40AF)',
+            background: loading ? 'var(--border-color)' : 'linear-gradient(135deg, #3B82F6, #1E40AF)',
             border: 'none', color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', marginTop: 8,
           }}>
             {loading ? 'Connexion...' : 'Accéder au Dashboard'}
@@ -152,14 +155,14 @@ export default function Login() {
         </form>
 
         {/* Lien inscription */}
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#475569' }}>
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-muted)' }}>
           Pas encore de compte ?{' '}
           <Link to="/register" style={{ color: '#3B82F6', textDecoration: 'none', fontWeight: 600 }}>
             Créer un espace Mylo IPS →
           </Link>
         </div>
 
-        <p style={{ color: '#334155', fontSize: 11, textAlign: 'center', marginTop: 16 }}>
+        <p style={{ color: 'var(--text-faint)', fontSize: 11, textAlign: 'center', marginTop: 16 }}>
           Mylo IPS — Système de prévention d'intrusion © 2025
         </p>
       </div>

@@ -180,17 +180,17 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
       position: 'fixed', bottom: 16, right: 16,
       width: 'min(430px, calc(100vw - 32px))',
       height: 'min(600px, calc(100vh - 32px))',
-      background: '#0F1629',
-      border: '1px solid #1E2D4F',
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border-color)',
       borderRadius: 16,
       display: 'flex', flexDirection: 'column',
       zIndex: 1000, boxSizing: 'border-box',
-      boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+      boxShadow: 'var(--shadow-xl)',
     }}>
 
       {/* Header */}
       <div style={{
-        padding: '14px 18px', borderBottom: '1px solid #1E2D4F',
+        padding: '14px 18px', borderBottom: '1px solid var(--border-color)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -211,7 +211,7 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
             )}
           </div>
           <div>
-            <div style={{ color: '#F8FAFC', fontWeight: 700, fontSize: 14 }}>Mylo Copilot</div>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 14 }}>Mylo Copilot</div>
             <div style={{ color: newCount > 0 ? '#EF4444' : '#22C55E', fontSize: 11 }}>
               {newCount > 0
                 ? `⚠ ${newCount} alerte${newCount > 1 ? 's' : ''} non traitée${newCount > 1 ? 's' : ''}`
@@ -222,10 +222,10 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={refreshContext} disabled={refreshing}
             title="Recharger les données réseau"
-            style={{ background:'none', border:'1px solid #1E2D4F', color: refreshing ? '#3B82F6' : '#94A3B8', cursor:'pointer', padding:'4px 8px', borderRadius:6, display:'flex', alignItems:'center' }}>
+            style={{ background:'none', border:'1px solid var(--border-color)', color: refreshing ? '#3B82F6' : 'var(--text-secondary)', cursor:'pointer', padding:'4px 8px', borderRadius:6, display:'flex', alignItems:'center' }}>
             <RefreshCw size={14} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
           </button>
-          <button onClick={onClose} style={{ background:'none', border:'none', color:'#94A3B8', cursor:'pointer', padding:4 }}>
+          <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--text-secondary)', cursor:'pointer', padding:4 }}>
             <X size={18} />
           </button>
         </div>
@@ -238,8 +238,8 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
             <div style={{
               padding:'10px 14px', borderRadius:12, fontSize:13, lineHeight:1.6,
               whiteSpace:'pre-wrap',
-              background: m.role === 'user' ? '#3B82F6' : '#1E2D4F',
-              color:'#F8FAFC',
+              background: m.role === 'user' ? '#3B82F6' : 'var(--border-color)',
+              color: m.role === 'user' ? '#fff' : 'var(--text-primary)',
               borderBottomRightRadius: m.role === 'user' ? 2 : 12,
               borderBottomLeftRadius:  m.role === 'assistant' ? 2 : 12,
             }}>
@@ -249,7 +249,7 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
         ))}
         {loading && (
           <div style={{ alignSelf:'flex-start' }}>
-            <div style={{ padding:'10px 14px', borderRadius:12, background:'#1E2D4F', color:'#94A3B8', fontSize:13 }}>
+            <div style={{ padding:'10px 14px', borderRadius:12, background:'var(--border-color)', color:'var(--text-secondary)', fontSize:13 }}>
               Mylo analyse... 🔍
             </div>
           </div>
@@ -259,19 +259,19 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
 
       {/* Suggestions */}
       {messages.length <= 2 && (
-        <div style={{ padding:'8px 16px', display:'flex', flexWrap:'wrap', gap:6, borderTop:'1px solid #1E2D4F' }}>
+        <div style={{ padding:'8px 16px', display:'flex', flexWrap:'wrap', gap:6, borderTop:'1px solid var(--border-color)' }}>
           {SUGGESTIONS.map((s, i) => (
             <button key={i} onClick={() => setInput(s.replace(/^[^\s]+ /, ''))} style={{
               padding:'5px 10px', borderRadius:20, fontSize:11,
-              background:'#0A0E1A', border:'1px solid #1E2D4F',
-              color:'#94A3B8', cursor:'pointer', whiteSpace:'nowrap',
+              background:'var(--bg-primary)', border:'1px solid var(--border-color)',
+              color:'var(--text-secondary)', cursor:'pointer', whiteSpace:'nowrap',
             }}>{s}</button>
           ))}
         </div>
       )}
 
       {/* Input */}
-      <div style={{ padding:'12px 14px', borderTop:'1px solid #1E2D4F', display:'flex', gap:8 }}>
+      <div style={{ padding:'12px 14px', borderTop:'1px solid var(--border-color)', display:'flex', gap:8 }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -279,8 +279,8 @@ Tapez "état du réseau" pour un résumé immédiat, ou posez-moi directement vo
           placeholder="Posez votre question à Mylo..."
           style={{
             flex:1, padding:'10px 14px', borderRadius:8, fontSize:13,
-            background:'#0A0E1A', border:'1px solid #1E2D4F',
-            color:'#F8FAFC', outline:'none',
+            background:'var(--bg-primary)', border:'1px solid var(--border-color)',
+            color:'var(--text-primary)', outline:'none',
           }}
         />
         <button onClick={send} disabled={loading} style={{

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Key } from 'lucide-react'
 import { verifyTotpWithToken, getUser } from '../api/mylo'
+import ThemeToggle from '../components/ThemeToggle'
 
 export default function VerifyTOTP() {
   const navigate = useNavigate()
@@ -49,30 +50,31 @@ export default function VerifyTOTP() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0A0E1A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 480, padding: 'clamp(18px, 6vw, 32px)', borderRadius: 20, background: '#0F1629', border: '1px solid #1E2D4F', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, position: 'relative' }}>
+      <ThemeToggle style={{ position: 'absolute', top: 20, right: 20 }} />
+      <div style={{ width: '100%', maxWidth: 480, padding: 'clamp(18px, 6vw, 32px)', borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ width: 64, height: 64, margin: '0 auto 16px', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #3B82F6, #1E40AF)' }}>
             <Key size={28} color="#fff" />
           </div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#F8FAFC' }}>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)' }}>
             Confirmez votre code TOTP
           </h1>
-          <p style={{ marginTop: 12, color: '#94A3B8', fontSize: 14 }}>
+          <p style={{ marginTop: 12, color: 'var(--text-secondary)', fontSize: 14 }}>
             Saisissez le code à 6 chiffres généré par votre application d'authentification.
           </p>
         </div>
 
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: '#94A3B8', fontWeight: 700 }}>Code à 6 chiffres</label>
+            <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-secondary)', fontWeight: 700 }}>Code à 6 chiffres</label>
             <input
               value={code}
               onChange={e => setCode(e.target.value)}
               placeholder="000000"
               maxLength={6}
               autoComplete="one-time-code"
-              style={{ width: '100%', padding: '13px 16px', borderRadius: 12, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 16, letterSpacing: '0.2em' }}
+              style={{ width: '100%', padding: '13px 16px', borderRadius: 12, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: 16, letterSpacing: '0.2em' }}
             />
           </div>
 
@@ -87,7 +89,7 @@ export default function VerifyTOTP() {
           </button>
         </form>
 
-        <div style={{ marginTop: 22, color: '#64748B', fontSize: 13, textAlign: 'center' }}>
+        <div style={{ marginTop: 22, color: 'var(--text-tertiary)', fontSize: 13, textAlign: 'center' }}>
           Si le code n'est plus valide, patientez quelques secondes puis récupérez un nouveau code dans votre application.
         </div>
       </div>

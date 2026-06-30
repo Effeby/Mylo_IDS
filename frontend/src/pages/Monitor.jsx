@@ -79,13 +79,13 @@ export default function Monitor() {
   }, [results, search, typeFilter, onlyAttacks])
 
   return (
-    <div className="mylo-page" style={{ color: '#F8FAFC' }}>
+    <div className="mylo-page" style={{ color: 'var(--text-primary)' }}>
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Moniteur en direct</h1>
-          <p style={{ margin: '4px 0 0', color: '#94A3B8', fontSize: 13 }}>
+          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: 13 }}>
             Analyse du trafic réseau en temps réel — {getOrganisationName()}
           </p>
         </div>
@@ -112,7 +112,7 @@ export default function Monitor() {
           },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} style={{
-            background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12, padding: 20,
+            background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 20,
             display: 'flex', alignItems: 'center', gap: 16,
           }}>
             <div style={{
@@ -123,7 +123,7 @@ export default function Monitor() {
             </div>
             <div>
               <div style={{ fontSize: 26, fontWeight: 800, color }}>{value}</div>
-              <div style={{ fontSize: 12, color: '#94A3B8' }}>{label}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{label}</div>
             </div>
           </div>
         ))}
@@ -132,11 +132,11 @@ export default function Monitor() {
       {/* ── Status bar ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 13,
-        color: !running ? '#94A3B8' : captureOk === false ? '#EF4444' : '#22C55E',
+        color: !running ? 'var(--text-secondary)' : captureOk === false ? '#EF4444' : '#22C55E',
       }}>
         <div style={{
           width: 8, height: 8, borderRadius: '50%',
-          background: !running ? '#475569' : captureOk === false ? '#EF4444' : '#22C55E',
+          background: !running ? 'var(--text-muted)' : captureOk === false ? '#EF4444' : '#22C55E',
           animation: running && captureOk !== false ? 'pulse 2s infinite' : 'none',
         }} />
         {!running
@@ -167,7 +167,7 @@ export default function Monitor() {
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
           <Search size={14} style={{
             position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-            color: '#475569',
+            color: 'var(--text-muted)',
           }} />
           <input
             value={search}
@@ -175,15 +175,15 @@ export default function Monitor() {
             placeholder="Rechercher IP ou type..."
             style={{
               width: '100%', padding: '9px 12px 9px 34px',
-              background: '#0F1629', border: '1px solid #1E2D4F',
-              borderRadius: 8, color: '#F8FAFC', fontSize: 13, outline: 'none',
+              background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+              borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, outline: 'none',
               boxSizing: 'border-box',
             }}
           />
           {search && (
             <button onClick={() => setSearch('')} style={{
               position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', color: '#475569', cursor: 'pointer', padding: 0,
+              background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0,
             }}>
               <X size={14} />
             </button>
@@ -195,9 +195,9 @@ export default function Monitor() {
           {ATTACK_TYPES.map(t => (
             <button key={t} onClick={() => setTypeFilter(t)} style={{
               padding: '6px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-              border: `1px solid ${typeFilter === t ? (COLORS[t] || '#3B82F6') : '#1E2D4F'}`,
+              border: `1px solid ${typeFilter === t ? (COLORS[t] || '#3B82F6') : 'var(--border-color)'}`,
               background: typeFilter === t ? `${(COLORS[t] || '#3B82F6')}20` : 'transparent',
-              color: typeFilter === t ? (COLORS[t] || '#3B82F6') : '#64748B',
+              color: typeFilter === t ? (COLORS[t] || '#3B82F6') : 'var(--text-tertiary)',
               cursor: 'pointer', whiteSpace: 'nowrap',
             }}>
               {t}
@@ -208,9 +208,9 @@ export default function Monitor() {
         {/* Toggle attaques seulement */}
         <button onClick={() => setOnlyAttacks(v => !v)} style={{
           padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-          border: `1px solid ${onlyAttacks ? '#EF4444' : '#1E2D4F'}`,
+          border: `1px solid ${onlyAttacks ? '#EF4444' : 'var(--border-color)'}`,
           background: onlyAttacks ? 'rgba(239,68,68,0.1)' : 'transparent',
-          color: onlyAttacks ? '#EF4444' : '#64748B',
+          color: onlyAttacks ? '#EF4444' : 'var(--text-tertiary)',
           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
           whiteSpace: 'nowrap',
         }}>
@@ -220,15 +220,15 @@ export default function Monitor() {
       </div>
 
       {/* ── Table ── */}
-      <div className="mylo-table-scroll" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12 }}>
+      <div className="mylo-table-scroll" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12 }}>
         <div style={{ minWidth: 880 }}>
 
         {/* Header table */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '100px 1fr 1fr 130px 110px 100px 100px',
-          padding: '12px 20px', borderBottom: '1px solid #1E2D4F',
-          color: '#475569', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em',
+          padding: '12px 20px', borderBottom: '1px solid var(--border-color)',
+          color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em',
         }}>
           <span>DATE/HEURE</span>
           <span>IP SOURCE</span>
@@ -241,7 +241,7 @@ export default function Monitor() {
 
         {/* Lignes */}
         {filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#475569' }}>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
             <Activity size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
             <p style={{ margin: 0, fontSize: 14 }}>
               {!running
@@ -251,20 +251,20 @@ export default function Monitor() {
                 : 'En attente du trafic de capture.py...'}
             </p>
             {running && !search && typeFilter === 'Tous' && (
-              <p style={{ margin: '8px 0 0', fontSize: 12, color: '#334155' }}>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-faint)' }}>
                 Lance <code style={{ color: '#60A5FA' }}>python ml/capture.py</code> en PowerShell admin
               </p>
             )}
           </div>
         ) : (
           filtered.map(r => {
-            const typeColor = COLORS[r.attack_type] || '#94A3B8'
+            const typeColor = COLORS[r.attack_type] || 'var(--text-secondary)'
             const isBlocked = blocked.has(r.src_ip)
             return (
               <div key={r.id} style={{
                 display: 'grid',
                 gridTemplateColumns: '100px 1fr 1fr 130px 110px 100px 100px',
-                padding: '11px 20px', borderBottom: '1px solid #0A0E1A',
+                padding: '11px 20px', borderBottom: '1px solid var(--bg-primary)',
                 fontSize: 13, alignItems: 'center',
                 background: r.is_attack
                   ? 'rgba(239,68,68,0.03)'
@@ -275,8 +275,8 @@ export default function Monitor() {
                 <div style={{ fontFamily: 'monospace', fontSize: 11 }}>
                   {(() => { const f = formatDate(r.detected_at); return (
                     <>
-                      {f.line1 && <div style={{ color: '#F8FAFC', fontWeight: 500 }}>{f.line1}</div>}
-                      <div style={{ color: '#94A3B8' }}>{f.line2}</div>
+                      {f.line1 && <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{f.line1}</div>}
+                      <div style={{ color: 'var(--text-secondary)' }}>{f.line2}</div>
                     </>
                   )})()}
                 </div>
@@ -292,7 +292,7 @@ export default function Monitor() {
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <span style={{
                       fontFamily: 'monospace', fontSize: 12,
-                      color: r.is_attack ? '#F8FAFC' : '#64748B',
+                      color: r.is_attack ? 'var(--text-primary)' : 'var(--text-tertiary)',
                     }}>{r.src_ip || '—'}</span>
                     <span style={{ fontSize:11, padding:'2px 6px', borderRadius:8, display:'inline-flex', alignItems:'center', gap:6, background: r.source === 'wazuh' ? 'rgba(124,58,237,0.12)' : 'rgba(99,102,241,0.08)', color: r.source === 'wazuh' ? '#7C3AED' : '#6366F1' }} title={r.source || 'scapy'}>
                       {r.source === 'wazuh' ? <Shield size={12} color="#7C3AED" /> : <svg width="12" height="12" viewBox="0 0 8 8" style={{borderRadius:6, display:'block'}}><circle cx="4" cy="4" r="4" fill="#6366F1"/></svg>}
@@ -302,7 +302,7 @@ export default function Monitor() {
                 </div>
 
                 {/* IP Destination */}
-                <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748B' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-tertiary)' }}>
                   {r.dst_ip || '—'}
                 </span>
 
@@ -313,7 +313,7 @@ export default function Monitor() {
                 }}>
                   {r.attack_type === 'Behavioral' ? (
                     <span style={{ color: '#A855F7' }}>
-                      Anomalie <span style={{ fontSize: 10, color: '#64748B' }}>⬡ Comportemental</span>
+                      Anomalie <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>⬡ Comportemental</span>
                     </span>
                   ) : r.attack_type}
                 </span>
@@ -322,7 +322,7 @@ export default function Monitor() {
                 <AlertBadge severity={r.severity} />
 
                 {/* Confiance */}
-                <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#94A3B8' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
                   {r.is_attack
                     ? `${(r.binary_confidence * 100).toFixed(1)}%`
                     : `${(r.attack_confidence * 100).toFixed(1)}%`}
@@ -352,7 +352,7 @@ export default function Monitor() {
                     {isBlocked ? 'Bloquée' : blocking === r.src_ip ? '...' : 'Bloquer'}
                   </button>
                 ) : (
-                  <span style={{ color: '#1E2D4F', fontSize: 11 }}>—</span>
+                  <span style={{ color: 'var(--border-color)', fontSize: 11 }}>—</span>
                 )}
               </div>
             )
@@ -363,7 +363,7 @@ export default function Monitor() {
 
       {/* Résumé filtres */}
       {(search || typeFilter !== 'Tous' || onlyAttacks) && results.length > 0 && (
-        <div style={{ marginTop: 12, fontSize: 12, color: '#475569', textAlign: 'right' }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right' }}>
           {filtered.length} / {results.length} événements affichés
           <button onClick={() => { setSearch(''); setTypeFilter('Tous'); setOnlyAttacks(false) }}
             style={{

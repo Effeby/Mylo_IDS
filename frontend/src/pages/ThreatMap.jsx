@@ -218,7 +218,7 @@ export default function ThreatMap() {
     markersRef.current.push(serverMarker)
 
     points.forEach(pt => {
-      const color = ATTACK_COLORS[pt.attack_type] || '#94A3B8'
+      const color = ATTACK_COLORS[pt.attack_type] || 'var(--text-secondary)'
       const size  = pt.severity === 'CRITICAL' ? 16
                   : pt.severity === 'HIGH'     ? 13
                   : pt.severity === 'MEDIUM'   ? 10 : 8
@@ -279,7 +279,7 @@ export default function ThreatMap() {
   }
 
   return (
-    <div className="mylo-page" style={{ color:'#F8FAFC', height:'100vh', maxHeight:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', boxSizing:'border-box' }}>
+    <div className="mylo-page" style={{ color:'var(--text-primary)', height:'100vh', maxHeight:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', boxSizing:'border-box' }}>
 
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
@@ -289,7 +289,7 @@ export default function ThreatMap() {
           </div>
           <div>
             <h1 style={{ margin:0, fontSize:22, fontWeight:800 }}>Threat Map</h1>
-            <p style={{ margin:0, color:'#94A3B8', fontSize:13 }}>
+            <p style={{ margin:0, color:'var(--text-secondary)', fontSize:13 }}>
               Géolocalisation des IP attaquantes · Refresh auto 30s
             </p>
           </div>
@@ -297,16 +297,16 @@ export default function ThreatMap() {
         <div style={{ display:'flex', gap:10 }}>
           <button onClick={() => setShowInfo(v => !v)} style={{
             padding:'8px 12px', borderRadius:8,
-            border:`1px solid ${showInfo ? '#F97316' : '#1E2D4F'}`,
+            border:`1px solid ${showInfo ? '#F97316' : 'var(--border-color)'}`,
             background: showInfo ? 'rgba(249,115,22,0.1)' : 'transparent',
-            color: showInfo ? '#F97316' : '#94A3B8', cursor:'pointer',
+            color: showInfo ? '#F97316' : 'var(--text-secondary)', cursor:'pointer',
             display:'flex', alignItems:'center', gap:6, fontSize:12,
           }}>
             <Info size={14} /> Fiabilité
           </button>
           <button onClick={loadThreats} disabled={loading} style={{
-            padding:'8px 16px', borderRadius:8, border:'1px solid #1E2D4F',
-            background:'transparent', color:'#94A3B8',
+            padding:'8px 16px', borderRadius:8, border:'1px solid var(--border-color)',
+            background:'transparent', color:'var(--text-secondary)',
             cursor: loading ? 'not-allowed' : 'pointer',
             display:'flex', alignItems:'center', gap:6, fontSize:13,
           }}>
@@ -339,25 +339,25 @@ export default function ThreatMap() {
 
       {/* KPIs */}
       <div className="mylo-grid-responsive" style={{ '--cols': '1fr 1fr 2fr', gap:12, marginBottom:12 }}>
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
           <MapPin size={18} color="#3B82F6" />
           <div>
             <div style={{ fontSize:20, fontWeight:800, color:'#3B82F6' }}>{stats.total}</div>
-            <div style={{ fontSize:11, color:'#94A3B8' }}>IPs localisées</div>
+            <div style={{ fontSize:11, color:'var(--text-secondary)' }}>IPs localisées</div>
           </div>
         </div>
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
           <Globe size={18} color="#F97316" />
           <div>
             <div style={{ fontSize:20, fontWeight:800, color:'#F97316' }}>{stats.countries}</div>
-            <div style={{ fontSize:11, color:'#94A3B8' }}>Pays d'origine</div>
+            <div style={{ fontSize:11, color:'var(--text-secondary)' }}>Pays d'origine</div>
           </div>
         </div>
-        <div style={{ background:'#0F1629', border:'1px solid #1E2D4F', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
           <AlertTriangle size={18} color="#EF4444" />
           <div>
             <div style={{ fontSize:13, fontWeight:700, color:'#EF4444' }}>{stats.topCountries}</div>
-            <div style={{ fontSize:11, color:'#94A3B8' }}>Top pays attaquants</div>
+            <div style={{ fontSize:11, color:'var(--text-secondary)' }}>Top pays attaquants</div>
           </div>
         </div>
       </div>
@@ -365,7 +365,7 @@ export default function ThreatMap() {
       {/* Légende */}
       <div style={{ display:'flex', gap:16, marginBottom:10, flexWrap:'wrap', alignItems:'center' }}>
         {Object.entries(ATTACK_COLORS).filter(([k]) => k !== 'Normal').map(([type, color]) => (
-          <div key={type} style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'#94A3B8' }}>
+          <div key={type} style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'var(--text-secondary)' }}>
             <div style={{ width:8, height:8, borderRadius:'50%', background:color }} />{type}
           </div>
         ))}
@@ -373,31 +373,31 @@ export default function ThreatMap() {
           <div style={{ width:10, height:10, background:'#22C55E', transform:'rotate(45deg)' }} />
           Votre réseau
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'#94A3B8' }}>
-          <div style={{ width:20, height:2, background:'#94A3B8', borderTop:'2px dashed #94A3B8' }} />
+        <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'var(--text-secondary)' }}>
+          <div style={{ width:20, height:2, background:'var(--text-secondary)', borderTop:'2px dashed var(--text-secondary)' }} />
           Flux d'attaque
         </div>
       </div>
 
       {/* Carte */}
-      <div style={{ flex:1, position:'relative', borderRadius:12, overflow:'hidden', border:'1px solid #1E2D4F', minHeight:0 }}>
+      <div style={{ flex:1, position:'relative', borderRadius:12, overflow:'hidden', border:'1px solid var(--border-color)', minHeight:0 }}>
         <div ref={mapRef} style={{ width:'100%', height:'100%', minHeight:300 }} />
 
         {/* Panneau détail */}
         {selected && (
           <div className="mylo-panel" style={{
             position:'absolute', top:16, right:16, zIndex:1000,
-            background:'rgba(10,14,26,0.97)', border:'1px solid #1E2D4F',
+            background:'var(--bg-overlay-panel)', border:'1px solid var(--border-color)',
             borderRadius:12, padding:20, width:'min(280px, calc(100vw - 32px))',
             backdropFilter:'blur(10px)',
           }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-              <span style={{ fontWeight:700, fontSize:14, color:'#F8FAFC' }}>IP Attaquante</span>
-              <button onClick={() => setSelected(null)} style={{ background:'none', border:'none', color:'#94A3B8', cursor:'pointer', fontSize:16 }}>✕</button>
+              <span style={{ fontWeight:700, fontSize:14, color:'var(--text-primary)' }}>IP Attaquante</span>
+              <button onClick={() => setSelected(null)} style={{ background:'none', border:'none', color:'var(--text-secondary)', cursor:'pointer', fontSize:16 }}>✕</button>
             </div>
 
             {/* IP + type connexion */}
-            <div style={{ fontFamily:'monospace', fontSize:15, fontWeight:800, color: ATTACK_COLORS[selected.attack_type] || '#F8FAFC', marginBottom:8 }}>
+            <div style={{ fontFamily:'monospace', fontSize:15, fontWeight:800, color: ATTACK_COLORS[selected.attack_type] || 'var(--text-primary)', marginBottom:8 }}>
               {selected.ip}
             </div>
             <div style={{
@@ -408,10 +408,10 @@ export default function ThreatMap() {
                           'rgba(100,116,139,0.15)',
               border: `1px solid ${
                 selected.conn_type?.risk === 'CRITIQUE' ? '#EF4444' :
-                selected.conn_type?.risk === 'ÉLEVÉ'   ? '#F97316' : '#475569'
+                selected.conn_type?.risk === 'ÉLEVÉ'   ? '#F97316' : 'var(--text-muted)'
               }`,
               color: selected.conn_type?.risk === 'CRITIQUE' ? '#EF4444' :
-                     selected.conn_type?.risk === 'ÉLEVÉ'   ? '#F97316' : '#94A3B8',
+                     selected.conn_type?.risk === 'ÉLEVÉ'   ? '#F97316' : 'var(--text-secondary)',
               fontSize:11, fontWeight:700,
             }}>
               {selected.conn_type?.icon} {selected.conn_type?.type}
@@ -429,8 +429,8 @@ export default function ThreatMap() {
               { label:'Cible',          value: TARGET_SERVERS[selected.dst_ip] || selected.dst_ip || '?' },
             ].map(({ label, value }) => (
               <div key={label} style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:5 }}>
-                <span style={{ color:'#475569' }}>{label}</span>
-                <span style={{ color:'#F8FAFC', maxWidth:160, textAlign:'right', wordBreak:'break-all' }}>{value || '—'}</span>
+                <span style={{ color:'var(--text-muted)' }}>{label}</span>
+                <span style={{ color:'var(--text-primary)', maxWidth:160, textAlign:'right', wordBreak:'break-all' }}>{value || '—'}</span>
               </div>
             ))}
 
@@ -443,7 +443,7 @@ export default function ThreatMap() {
 
         {/* Message vide */}
         {!loading && geoPoints.length === 0 && (
-          <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', textAlign:'center', color:'#475569', pointerEvents:'none' }}>
+          <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', textAlign:'center', color:'var(--text-muted)', pointerEvents:'none' }}>
             <Globe size={48} style={{ marginBottom:12, opacity:0.3 }} />
             <p style={{ margin:0, fontSize:14 }}>Aucune IP externe à géolocaliser</p>
             <p style={{ margin:'4px 0 0', fontSize:12 }}>Lance seed_map.py pour peupler la carte</p>

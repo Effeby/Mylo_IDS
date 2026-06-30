@@ -4,6 +4,7 @@ import {
   CheckCircle, ChevronRight, ChevronLeft, Plus, Trash2,
   Wifi, Eye, Zap, MapPin, Mail, Phone, Send
 } from 'lucide-react'
+import ThemeToggle from '../components/ThemeToggle'
 
 const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
@@ -44,10 +45,10 @@ const BASELINE_DURATIONS = [
 ]
 
 const S = {
-  page:    { minHeight: '100vh', background: '#070B14', color: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
-  card:    { width: '100%', maxWidth: 720, background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(20px, 6vw, 40px)', boxSizing: 'border-box' },
-  input:   { width: '100%', padding: '10px 14px', borderRadius: 8, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 14, outline: 'none', boxSizing: 'border-box' },
-  label:   { fontSize: 12, color: '#94A3B8', fontWeight: 600, marginBottom: 6, display: 'block', letterSpacing: '0.05em' },
+  page:    { minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, position: 'relative' },
+  card:    { width: '100%', maxWidth: 720, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 'clamp(20px, 6vw, 40px)', boxSizing: 'border-box' },
+  input:   { width: '100%', padding: '10px 14px', borderRadius: 8, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box' },
+  label:   { fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 6, display: 'block', letterSpacing: '0.05em' },
   btn:     { padding: '12px 24px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 },
   error:   { color: '#EF4444', fontSize: 12, marginTop: 4 },
 }
@@ -57,7 +58,7 @@ function Field({ label, children, desc }) {
     <div style={{ marginBottom: 16 }}>
       <label style={S.label}>{label}</label>
       {children}
-      {desc && <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>{desc}</div>}
+      {desc && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{desc}</div>}
     </div>
   )
 }
@@ -71,15 +72,15 @@ function StepIndicator({ current, total }) {
             width: 32, height: 32, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 13, fontWeight: 700,
-            background: i < current ? '#22C55E' : i === current ? '#3B82F6' : '#1E2D4F',
-            color: i <= current ? '#fff' : '#475569',
+            background: i < current ? '#22C55E' : i === current ? '#3B82F6' : 'var(--border-color)',
+            color: i <= current ? '#fff' : 'var(--text-muted)',
             border: i === current ? '2px solid #3B82F6' : 'none',
             transition: 'all 0.3s',
           }}>
             {i < current ? <CheckCircle size={16} /> : i + 1}
           </div>
           {i < total - 1 && (
-            <div style={{ width: 40, height: 2, background: i < current ? '#22C55E' : '#1E2D4F', transition: 'all 0.3s' }} />
+            <div style={{ width: 40, height: 2, background: i < current ? '#22C55E' : 'var(--border-color)', transition: 'all 0.3s' }} />
           )}
         </div>
       ))}
@@ -216,7 +217,7 @@ export default function Onboarding({ authToken, onComplete }) {
       case 0: return (
         <div>
           <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>Bienvenue sur Mylo IPS 🛡️</h2>
-          <p style={{ color: '#64748B', marginBottom: 24, fontSize: 13 }}>
+          <p style={{ color: 'var(--text-tertiary)', marginBottom: 24, fontSize: 13 }}>
             Configurons maintenant votre réseau surveillé.
           </p>
 
@@ -248,12 +249,12 @@ export default function Onboarding({ authToken, onComplete }) {
                 <div key={m.value} onClick={() => setNetwork(p => ({...p, deploy_mode: m.value}))}
                   style={{
                     padding: '12px 14px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s',
-                    border: `1px solid ${network.deploy_mode === m.value ? '#3B82F6' : '#1E2D4F'}`,
-                    background: network.deploy_mode === m.value ? 'rgba(59,130,246,0.08)' : '#0A0E1A',
+                    border: `1px solid ${network.deploy_mode === m.value ? '#3B82F6' : 'var(--border-color)'}`,
+                    background: network.deploy_mode === m.value ? 'rgba(59,130,246,0.08)' : 'var(--bg-primary)',
                   }}>
                   <div style={{ fontSize: 18, marginBottom: 4 }}>{m.icon}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC' }}>{m.label}</div>
-                  <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{m.desc}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{m.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{m.desc}</div>
                 </div>
               ))}
             </div>
@@ -290,7 +291,7 @@ export default function Onboarding({ authToken, onComplete }) {
               </div>
             ))}
             <button onClick={() => setNetwork(p => ({...p, vlans: [...p.vlans, {name:'', range:'', critical:false}]}))}
-              style={{ ...S.btn, background: 'transparent', border: '1px dashed #1E2D4F', color: '#64748B', fontSize: 12, marginTop: 4 }}>
+              style={{ ...S.btn, background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: 12, marginTop: 4 }}>
               <Plus size={14} /> Ajouter un segment
             </button>
           </Field>
@@ -301,7 +302,7 @@ export default function Onboarding({ authToken, onComplete }) {
       case 1: return (
         <div>
           <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800 }}>Mode de détection</h2>
-          <p style={{ color: '#64748B', marginBottom: 24, fontSize: 13 }}>
+          <p style={{ color: 'var(--text-tertiary)', marginBottom: 24, fontSize: 13 }}>
             Choisissez comment Mylo va réagir aux menaces détectées.
           </p>
 
@@ -314,16 +315,16 @@ export default function Onboarding({ authToken, onComplete }) {
                   <div key={m.value} onClick={() => setIdsConfig(p => ({...p, ids_mode: m.value}))}
                     style={{
                       padding: '16px 20px', borderRadius: 10, cursor: 'pointer',
-                      border: `1px solid ${selected ? m.color : '#1E2D4F'}`,
-                      background: selected ? `${m.color}10` : '#0A0E1A',
+                      border: `1px solid ${selected ? m.color : 'var(--border-color)'}`,
+                      background: selected ? `${m.color}10` : 'var(--bg-primary)',
                       display: 'flex', alignItems: 'center', gap: 14,
                     }}>
                     <div style={{ width: 40, height: 40, borderRadius: 8, background: `${m.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon size={20} color={m.color} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: selected ? m.color : '#F8FAFC' }}>{m.label}</div>
-                      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{m.desc}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: selected ? m.color : 'var(--text-primary)' }}>{m.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{m.desc}</div>
                     </div>
                     {selected && <CheckCircle size={20} color={m.color} style={{ marginLeft: 'auto' }} />}
                   </div>
@@ -338,11 +339,11 @@ export default function Onboarding({ authToken, onComplete }) {
                 <div key={d.value} onClick={() => setIdsConfig(p => ({...p, baseline_days: d.value}))}
                   style={{
                     padding: '12px', borderRadius: 8, cursor: 'pointer', textAlign: 'center',
-                    border: `1px solid ${idsConfig.baseline_days === d.value ? '#3B82F6' : '#1E2D4F'}`,
-                    background: idsConfig.baseline_days === d.value ? 'rgba(59,130,246,0.08)' : '#0A0E1A',
+                    border: `1px solid ${idsConfig.baseline_days === d.value ? '#3B82F6' : 'var(--border-color)'}`,
+                    background: idsConfig.baseline_days === d.value ? 'rgba(59,130,246,0.08)' : 'var(--bg-primary)',
                   }}>
                   <div style={{ fontSize: 18, fontWeight: 800, color: '#3B82F6' }}>{d.label}</div>
-                  <div style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>{d.desc}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>{d.desc}</div>
                 </div>
               ))}
             </div>
@@ -362,7 +363,7 @@ export default function Onboarding({ authToken, onComplete }) {
             </Field>
           )}
 
-          <div style={{ padding: '14px 16px', borderRadius: 8, background: 'rgba(59,130,246,0.06)', border: '1px solid #1E2D4F', fontSize: 12, color: '#94A3B8' }}>
+          <div style={{ padding: '14px 16px', borderRadius: 8, background: 'rgba(59,130,246,0.06)', border: '1px solid var(--border-color)', fontSize: 12, color: 'var(--text-secondary)' }}>
             💡 <strong>Recommandation :</strong> Commencez en mode Observation pendant {idsConfig.baseline_days} jours.
             Une fois la baseline établie, passez en mode Actif progressivement.
           </div>
@@ -373,23 +374,23 @@ export default function Onboarding({ authToken, onComplete }) {
       case 2: return (
         <div>
           <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800 }}>Notifications & Alertes</h2>
-          <p style={{ color: '#64748B', marginBottom: 24, fontSize: 13 }}>
+          <p style={{ color: 'var(--text-tertiary)', marginBottom: 24, fontSize: 13 }}>
             Configurez comment votre équipe sera notifiée des incidents.
           </p>
 
           {/* Toggle Telegram */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 10, border: '1px solid #1E2D4F', background: '#0A0E1A', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 20 }}>📱</span>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>Notifications Telegram</div>
-                <div style={{ fontSize: 12, color: '#64748B' }}>Recevoir les alertes sur Telegram</div>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Recevoir les alertes sur Telegram</div>
               </div>
             </div>
             <div onClick={() => setNotifs(p => ({...p, notif_enabled: !p.notif_enabled}))}
               style={{
                 width: 44, height: 24, borderRadius: 12, cursor: 'pointer', position: 'relative',
-                background: notifs.notif_enabled ? '#22C55E' : '#1E2D4F', transition: 'all 0.2s',
+                background: notifs.notif_enabled ? '#22C55E' : 'var(--border-color)', transition: 'all 0.2s',
               }}>
               <div style={{
                 position: 'absolute', top: 2, width: 20, height: 20, borderRadius: '50%', background: '#fff',
@@ -425,11 +426,11 @@ export default function Onboarding({ authToken, onComplete }) {
                 <div key={val} onClick={() => setNotifs(p => ({...p, notif_min_severity: val}))}
                   style={{
                     padding: '10px', borderRadius: 8, cursor: 'pointer', textAlign: 'center',
-                    border: `1px solid ${notifs.notif_min_severity === val ? color : '#1E2D4F'}`,
-                    background: notifs.notif_min_severity === val ? `${color}15` : '#0A0E1A',
+                    border: `1px solid ${notifs.notif_min_severity === val ? color : 'var(--border-color)'}`,
+                    background: notifs.notif_min_severity === val ? `${color}15` : 'var(--bg-primary)',
                   }}>
                   <div style={{ fontSize: 20 }}>{icon}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: notifs.notif_min_severity === val ? color : '#94A3B8', marginTop: 4 }}>{val}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: notifs.notif_min_severity === val ? color : 'var(--text-secondary)', marginTop: 4 }}>{val}</div>
                 </div>
               ))}
             </div>
@@ -441,14 +442,14 @@ export default function Onboarding({ authToken, onComplete }) {
       case 3: return (
         <div>
           <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800 }}>Équipe SOC</h2>
-          <p style={{ color: '#64748B', marginBottom: 24, fontSize: 13 }}>
+          <p style={{ color: 'var(--text-tertiary)', marginBottom: 24, fontSize: 13 }}>
             Ajoutez les membres de votre équipe de sécurité. Vous pouvez passer cette étape.
           </p>
 
           {members.map((m, i) => (
-            <div key={i} style={{ background: '#0A0E1A', border: '1px solid #1E2D4F', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+            <div key={i} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: 10, padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontWeight: 700, color: '#94A3B8', fontSize: 13 }}>Membre {i + 1}</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-secondary)', fontSize: 13 }}>Membre {i + 1}</span>
                 {members.length > 1 && (
                   <button onClick={() => setMembers(p => p.filter((_, j) => j !== i))}
                     style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>
@@ -497,7 +498,7 @@ export default function Onboarding({ authToken, onComplete }) {
           ))}
 
           <button onClick={() => setMembers(p => [...p, { username:'', first_name:'', last_name:'', email:'', role:'soc_analyst', poste:'', password:'' }])}
-            style={{ ...S.btn, background: 'transparent', border: '1px dashed #1E2D4F', color: '#64748B', fontSize: 13, width: '100%', justifyContent: 'center' }}>
+            style={{ ...S.btn, background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-tertiary)', fontSize: 13, width: '100%', justifyContent: 'center' }}>
             <Plus size={16} /> Ajouter un membre
           </button>
         </div>
@@ -507,7 +508,7 @@ export default function Onboarding({ authToken, onComplete }) {
       case 4: return (
         <div>
           <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800 }}>Récapitulatif</h2>
-          <p style={{ color: '#64748B', marginBottom: 24, fontSize: 13 }}>
+          <p style={{ color: 'var(--text-tertiary)', marginBottom: 24, fontSize: 13 }}>
             Vérifiez les informations avant de finaliser.
           </p>
 
@@ -542,15 +543,15 @@ export default function Onboarding({ authToken, onComplete }) {
               ]
             },
           ].map(({ icon: Icon, color, title, items }) => (
-            <div key={title} style={{ background: '#0A0E1A', border: '1px solid #1E2D4F', borderRadius: 10, padding: '14px 18px', marginBottom: 12 }}>
+            <div key={title} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: 10, padding: '14px 18px', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <Icon size={16} color={color} />
                 <span style={{ fontWeight: 700, fontSize: 13, color }}>{title}</span>
               </div>
               {items.map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                  <span style={{ color: '#475569' }}>{k}</span>
-                  <span style={{ color: '#F8FAFC', fontWeight: 600 }}>{v || '—'}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{k}</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{v || '—'}</span>
                 </div>
               ))}
             </div>
@@ -568,6 +569,7 @@ export default function Onboarding({ authToken, onComplete }) {
 
   return (
     <div style={S.page}>
+      <ThemeToggle style={{ position: 'absolute', top: 20, right: 20 }} />
       <div style={S.card}>
 
         {/* Header */}
@@ -577,7 +579,7 @@ export default function Onboarding({ authToken, onComplete }) {
           </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 18 }}>Mylo IPS</div>
-            <div style={{ fontSize: 12, color: '#64748B' }}>Configuration initiale</div>
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Configuration initiale</div>
           </div>
         </div>
 
@@ -601,8 +603,8 @@ export default function Onboarding({ authToken, onComplete }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
           <button onClick={prev} disabled={step === 0} style={{
             ...S.btn,
-            background: step === 0 ? '#0A0E1A' : '#1E2D4F',
-            color: step === 0 ? '#475569' : '#F8FAFC',
+            background: step === 0 ? 'var(--bg-primary)' : 'var(--border-color)',
+            color: step === 0 ? 'var(--text-muted)' : 'var(--text-primary)',
             cursor: step === 0 ? 'not-allowed' : 'pointer',
           }}>
             <ChevronLeft size={16} /> Précédent
@@ -627,7 +629,7 @@ export default function Onboarding({ authToken, onComplete }) {
         {/* Skip (étape équipe) */}
         {step === 3 && (
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <button onClick={next} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 12 }}>
+            <button onClick={next} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
               Passer cette étape →
             </button>
           </div>

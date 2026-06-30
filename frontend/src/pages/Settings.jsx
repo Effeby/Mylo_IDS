@@ -31,7 +31,7 @@ const ROLE_COLORS = {
   org_admin:   '#EF4444',
   soc_manager: '#F97316',
   soc_analyst: '#3B82F6',
-  viewer:      '#64748B',
+  viewer:      'var(--text-tertiary)',
 }
 
 async function apiFetch(path, options = {}) {
@@ -50,12 +50,12 @@ async function apiFetch(path, options = {}) {
 // ─── Composants UI ────────────────────────────────────────────────────────────
 function Section({ icon: Icon, title, color = '#3B82F6', children }) {
   return (
-    <div style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12, padding: 24, marginBottom: 16 }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 24, marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <div style={{ width: 34, height: 34, borderRadius: 8, background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={16} color={color} />
         </div>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h3>
       </div>
       {children}
     </div>
@@ -64,14 +64,14 @@ function Section({ icon: Icon, title, color = '#3B82F6', children }) {
 
 function Toggle({ label, desc, value, onChange }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #0A0E1A' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--bg-primary)' }}>
       <div>
-        <div style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 500 }}>{label}</div>
-        {desc && <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{desc}</div>}
+        <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{label}</div>
+        {desc && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>}
       </div>
       <button onClick={() => onChange(!value)} style={{
         width: 44, height: 24, borderRadius: 12, border: 'none',
-        background: value ? '#3B82F6' : '#1E2D4F',
+        background: value ? '#3B82F6' : 'var(--border-color)',
         cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0,
       }}>
         <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: value ? 23 : 3, transition: 'left 0.2s' }} />
@@ -86,14 +86,14 @@ function Slider({ label, desc, value, min, max, step = 0.01, onChange, color = '
     <div style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
         <div>
-          <span style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 500 }}>{label}</span>
-          {desc && <span style={{ fontSize: 11, color: '#475569', marginLeft: 8 }}>{desc}</span>}
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+          {desc && <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>{desc}</span>}
         </div>
         <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: 'monospace', background: `${color}15`, padding: '2px 8px', borderRadius: 6 }}>
           {format ? format(value) : value}
         </span>
       </div>
-      <div style={{ position: 'relative', height: 6, background: '#1E2D4F', borderRadius: 3 }}>
+      <div style={{ position: 'relative', height: 6, background: 'var(--border-color)', borderRadius: 3 }}>
         <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct}%`, background: color, borderRadius: 3 }} />
         <input type="range" min={min} max={max} step={step} value={value}
           onChange={e => onChange(parseFloat(e.target.value))}
@@ -106,10 +106,10 @@ function Slider({ label, desc, value, min, max, step = 0.01, onChange, color = '
 function Input({ label, desc, value, onChange, type = 'text', placeholder }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</label>
-      {desc && <div style={{ fontSize: 11, color: '#475569', marginBottom: 6 }}>{desc}</div>}
+      <label style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</label>
+      {desc && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>{desc}</div>}
       <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', outline: 'none', boxSizing: 'border-box' }} />
+        style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }} />
     </div>
   )
 }
@@ -137,11 +137,11 @@ function AddMemberModal({ onClose, onAdd }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}>
-      <div className="mylo-modal" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(18px, 5vw, 32px)', width: 500, maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'var(--backdrop-strong)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}>
+      <div className="mylo-modal" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 'clamp(18px, 5vw, 32px)', width: 500, maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Ajouter un membre</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={18} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18} /></button>
         </div>
         <div className="mylo-grid-2" style={{ gap: 12 }}>
           <Input label="Prénom" value={form.first_name} onChange={v => set('first_name', v)} placeholder="Jean" />
@@ -151,16 +151,16 @@ function AddMemberModal({ onClose, onAdd }) {
         <Input label="Email" type="email" value={form.email} onChange={v => set('email', v)} placeholder="jean@entreprise.com" />
         <Input label="Poste" value={form.poste} onChange={v => set('poste', v)} placeholder="Analyste SOC Senior" />
         <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>RÔLE</label>
+          <label style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>RÔLE</label>
           <select value={form.role} onChange={e => set('role', e.target.value)}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', outline: 'none' }}>
+            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none' }}>
             {ROLES.map(r => <option key={r.value} value={r.value}>{r.label} — Niveau {r.level}</option>)}
           </select>
         </div>
         <Input label="Mot de passe provisoire *" type="password" value={form.password} onChange={v => set('password', v)} placeholder="Min. 8 caractères" />
         {error && <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 12 }}>⚠️ {error}</div>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #1E2D4F', background: 'transparent', color: '#94A3B8', cursor: 'pointer' }}>Annuler</button>
+          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}>Annuler</button>
           <button onClick={submit} disabled={saving} style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#3B82F6', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>
             {saving ? 'Création...' : 'Créer le membre'}
           </button>
@@ -201,11 +201,11 @@ function EditMemberModal({ member, onClose, onSave }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}>
-      <div className="mylo-modal" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(18px, 5vw, 32px)', width: 480, maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'var(--backdrop-strong)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}>
+      <div className="mylo-modal" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 'clamp(18px, 5vw, 32px)', width: 480, maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Modifier {member.fullname || member.username}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={18} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18} /></button>
         </div>
         <div className="mylo-grid-2" style={{ gap: 12 }}>
           <Input label="Prénom"     value={form.first_name} onChange={v => set('first_name', v)} />
@@ -214,24 +214,24 @@ function EditMemberModal({ member, onClose, onSave }) {
         <Input label="Email" type="email" value={form.email} onChange={v => set('email', v)} />
         <Input label="Poste" value={form.poste} onChange={v => set('poste', v)} placeholder="Ex: Analyste SOC Senior" />
         <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>RÔLE</label>
+          <label style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>RÔLE</label>
           <select value={form.role} onChange={e => set('role', e.target.value)}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', outline: 'none' }}>
+            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none' }}>
             {ROLES.map(r => <option key={r.value} value={r.value}>{r.label} — Niveau {r.level}</option>)}
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', marginBottom: 16 }}>
-          <span style={{ fontSize: 13, color: '#F8FAFC' }}>Compte actif</span>
+          <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>Compte actif</span>
           <button onClick={() => set('is_active', !form.is_active)} style={{
             width: 44, height: 24, borderRadius: 12, border: 'none',
-            background: form.is_active ? '#3B82F6' : '#1E2D4F', cursor: 'pointer', position: 'relative',
+            background: form.is_active ? '#3B82F6' : 'var(--border-color)', cursor: 'pointer', position: 'relative',
           }}>
             <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: form.is_active ? 23 : 3, transition: 'left 0.2s' }} />
           </button>
         </div>
         {error && <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 12 }}>⚠️ {error}</div>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #1E2D4F', background: 'transparent', color: '#94A3B8', cursor: 'pointer' }}>Annuler</button>
+          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}>Annuler</button>
           <button onClick={submit} disabled={saving} style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#3B82F6', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>
             {saving ? 'Sauvegarde...' : 'Enregistrer'}
           </button>
@@ -411,23 +411,23 @@ export default function Settings() {
     }
   }
 
-  if (loading) return <div style={{ padding: 32, color: '#94A3B8' }}>Chargement...</div>
+  if (loading) return <div style={{ padding: 32, color: 'var(--text-secondary)' }}>Chargement...</div>
   if (error && !cfg) return <div style={{ padding: 32, color: '#EF4444' }}>{error}</div>
 
   return (
-    <div className="mylo-page" style={{ color: '#F8FAFC', maxWidth: 860 }}>
+    <div className="mylo-page" style={{ color: 'var(--text-primary)', maxWidth: 860 }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800 }}>Paramètres</h1>
-          <p style={{ margin: 0, color: '#94A3B8', fontSize: 13 }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>
             Configuration de Mylo IPS
-            {cfg?.updated_at && <span style={{ marginLeft: 12, color: '#334155' }}>· Mis à jour {new Date(cfg.updated_at).toLocaleString('fr-FR')}{cfg.updated_by && ` par ${cfg.updated_by}`}</span>}
+            {cfg?.updated_at && <span style={{ marginLeft: 12, color: 'var(--text-faint)' }}>· Mis à jour {new Date(cfg.updated_at).toLocaleString('fr-FR')}{cfg.updated_by && ` par ${cfg.updated_by}`}</span>}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={load} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #1E2D4F', background: 'transparent', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          <button onClick={load} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
             <RefreshCw size={14} /> Réinitialiser
           </button>
           <button onClick={save} disabled={saving} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: saved ? '#22C55E' : saving ? '#1E3A6E' : '#3B82F6', color: '#fff', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
@@ -443,27 +443,27 @@ export default function Settings() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: wazuhStatus.connected ? '#22C55E' : '#F97316' }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
                 {wazuhStatus.connected ? 'Connecté à Wazuh' : 'Wazuh non connecté'}
               </span>
             </div>
-            <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
               {wazuhStatus.message}
             </div>
             {wazuhStatus.wazuh_url && (
-              <div style={{ fontSize: 12, color: '#94A3B8' }}>Manager : {wazuhStatus.wazuh_url}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Manager : {wazuhStatus.wazuh_url}</div>
             )}
-            <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>
               Alerte(s) récupérées : {wazuhStatus.alert_count ?? '—'}
             </div>
             {wazuhStatus.last_check_at && (
-              <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
                 Vérifié le {new Date(wazuhStatus.last_check_at).toLocaleString('fr-FR')}
               </div>
             )}
           </div>
           <button onClick={loadWazuhStatus} disabled={wazuhStatus.checking}
-            style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #1E2D4F', background: wazuhStatus.checking ? '#1E2D4F' : '#3B82F6', color: '#fff', cursor: wazuhStatus.checking ? 'not-allowed' : 'pointer', minWidth: 160 }}>
+            style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: wazuhStatus.checking ? 'var(--border-color)' : '#3B82F6', color: '#fff', cursor: wazuhStatus.checking ? 'not-allowed' : 'pointer', minWidth: 160 }}>
             {wazuhStatus.checking ? 'Vérification...' : 'Vérifier Wazuh'}
           </button>
         </div>
@@ -479,22 +479,22 @@ export default function Settings() {
             <Input label="Site web" value={org.website || ''} onChange={v => setOrgField('website', v)} placeholder="https://entreprise.com" />
           </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>SECTEUR D'ACTIVITÉ</label>
+            <label style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>SECTEUR D'ACTIVITÉ</label>
             <select value={org.sector || 'other'} onChange={e => setOrgField('sector', e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', outline: 'none' }}>
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none' }}>
               {SECTORS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
           {/* Infos lecture seule */}
-          <div style={{ display: 'flex', gap: 16, padding: '10px 0', borderTop: '1px solid #1E2D4F', marginTop: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 16, padding: '10px 0', borderTop: '1px solid var(--border-color)', marginTop: 8, flexWrap: 'wrap' }}>
             {[
               { label: 'Plan', value: org.plan?.toUpperCase() },
               { label: 'Membres', value: org.members_count },
               { label: 'Créé le', value: org.created_at ? new Date(org.created_at).toLocaleDateString('fr-FR') : '—' },
             ].map(({ label, value }) => (
               <div key={label}>
-                <div style={{ fontSize: 11, color: '#475569' }}>{label}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#94A3B8' }}>{value}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>{value}</div>
               </div>
             ))}
           </div>
@@ -506,17 +506,17 @@ export default function Settings() {
         <Section icon={Users} title="Équipe SOC" color="#A855F7">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
             {members.map(m => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 10, background: '#0A0E1A', border: '1px solid #1E2D4F', flexWrap: 'wrap' }}>
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 10, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
                 {/* Avatar initiales */}
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${ROLE_COLORS[m.role] || '#3B82F6'}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: ROLE_COLORS[m.role] || '#3B82F6', flexShrink: 0 }}>
                   {(m.fullname || m.username)[0].toUpperCase()}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#F8FAFC' }}>{m.fullname || m.username}</div>
-                  <div style={{ fontSize: 11, color: '#475569' }}>{m.poste || m.email || '—'}</div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{m.fullname || m.username}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.poste || m.email || '—'}</div>
                 </div>
                 {/* Badge rôle */}
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: `${ROLE_COLORS[m.role]}20`, color: ROLE_COLORS[m.role] || '#94A3B8', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: `${ROLE_COLORS[m.role]}20`, color: ROLE_COLORS[m.role] || 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                   {m.role_display || m.role} · N{m.habilitation_level}
                 </span>
                 {/* Badge statut */}
@@ -528,15 +528,15 @@ export default function Settings() {
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => setEditMember(m)} title="Modifier"
-                    style={{ background: 'none', border: '1px solid #1E2D4F', color: '#3B82F6', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+                    style={{ background: 'none', border: '1px solid var(--border-color)', color: '#3B82F6', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
                     <Edit2 size={13} />
                   </button>
                   <button onClick={() => toggleMemberLock(m)}
                     title={m.is_locked ? 'Cliquer pour déverrouiller' : 'Cliquer pour verrouiller'}
                     style={{
                       background: m.is_locked ? 'rgba(239,68,68,0.1)' : 'none',
-                      border: `1px solid ${m.is_locked ? '#EF4444' : '#1E2D4F'}`,
-                      color: m.is_locked ? '#EF4444' : '#64748B',
+                      border: `1px solid ${m.is_locked ? '#EF4444' : 'var(--border-color)'}`,
+                      color: m.is_locked ? '#EF4444' : 'var(--text-tertiary)',
                       cursor: 'pointer', padding: '4px 8px', borderRadius: 6,
                       display: 'flex', alignItems: 'center', transition: 'all 0.2s',
                     }}>
@@ -544,13 +544,13 @@ export default function Settings() {
                   </button>
                   {canConfigureIDS && (
                     <button onClick={() => resetMemberTotp(m)} title="Réinitialiser TOTP"
-                      style={{ background: 'none', border: '1px solid #1E2D4F', color: '#64748B', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+                      style={{ background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
                       <RefreshCw size={13} />
                     </button>
                   )}
                   {m.id !== currentUser.id && (
                     <button onClick={() => deleteMember(m.id)} title="Supprimer"
-                      style={{ background: 'none', border: '1px solid #1E2D4F', color: '#EF4444', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+                      style={{ background: 'none', border: '1px solid var(--border-color)', color: '#EF4444', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
                       <Trash2 size={13} />
                     </button>
                   )}
@@ -558,7 +558,7 @@ export default function Settings() {
               </div>
             ))}
           </div>
-          <button onClick={() => setShowAddMember(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: '1px dashed #1E2D4F', background: 'transparent', color: '#64748B', cursor: 'pointer', fontSize: 13, width: '100%', justifyContent: 'center' }}>
+          <button onClick={() => setShowAddMember(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: '1px dashed var(--border-color)', background: 'transparent', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 13, width: '100%', justifyContent: 'center' }}>
             <Plus size={16} /> Ajouter un membre
           </button>
         </Section>
@@ -579,14 +579,14 @@ export default function Settings() {
       {/* ── Thresholds ── */}
       {canConfigureIDS && cfg && (
         <Section icon={Zap} title="Seuils par classe d'attaque" color="#A855F7">
-          <p style={{ fontSize: 12, color: '#475569', marginTop: 0, marginBottom: 16 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 0, marginBottom: 16 }}>
             Plus le seuil est bas, plus Mylo est sensible pour cette classe.
           </p>
           <div className="mylo-grid-2" style={{ gap: '0 32px' }}>
             {Object.entries(cfg.thresholds || {}).map(([cls, val]) => (
               <Slider key={cls} label={cls} value={val} min={0.05} max={0.95} step={0.01}
                 onChange={v => setThreshold(cls, v)} format={v => `${(v * 100).toFixed(0)}%`}
-                color={ATTACK_COLORS[cls] || '#94A3B8'} />
+                color={ATTACK_COLORS[cls] || 'var(--text-secondary)'} />
             ))}
           </div>
         </Section>
@@ -651,34 +651,34 @@ export default function Settings() {
 
         {/* Sévérité minimale globale */}
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>
+          <label style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>
             Sévérité minimale pour notifier
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             {['CRITICAL', 'HIGH', 'MEDIUM'].map(s => (
               <button key={s} onClick={() => set('notif_min_severity', s)} style={{
                 padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                border: `1px solid ${cfg.notif_min_severity === s ? '#3B82F6' : '#1E2D4F'}`,
+                border: `1px solid ${cfg.notif_min_severity === s ? '#3B82F6' : 'var(--border-color)'}`,
                 background: cfg.notif_min_severity === s ? 'rgba(59,130,246,0.15)' : 'transparent',
-                color: cfg.notif_min_severity === s ? '#3B82F6' : '#64748B', cursor: 'pointer',
+                color: cfg.notif_min_severity === s ? '#3B82F6' : 'var(--text-tertiary)', cursor: 'pointer',
               }}>{s}</button>
             ))}
           </div>
         </div>
 
         {/* Telegram */}
-        <div style={{ padding: 16, borderRadius: 10, background: '#0A0E1A', border: '1px solid #1E2D4F', marginBottom: 14 }}>
+        <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 18 }}>✈️</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC' }}>Telegram</div>
-                <div style={{ fontSize: 11, color: '#475569' }}>Alertes instantanées via bot Telegram</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Telegram</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Alertes instantanées via bot Telegram</div>
               </div>
             </div>
             <button onClick={() => set('notif_telegram_enabled', !cfg.notif_telegram_enabled)} style={{
               width: 44, height: 24, borderRadius: 12, border: 'none',
-              background: cfg.notif_telegram_enabled ? '#3B82F6' : '#1E2D4F',
+              background: cfg.notif_telegram_enabled ? '#3B82F6' : 'var(--border-color)',
               cursor: 'pointer', position: 'relative',
             }}>
               <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: cfg.notif_telegram_enabled ? 23 : 3, transition: 'left 0.2s' }} />
@@ -693,18 +693,18 @@ export default function Settings() {
         </div>
 
         {/* Email */}
-        <div style={{ padding: 16, borderRadius: 10, background: '#0A0E1A', border: '1px solid #1E2D4F' }}>
+        <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 18 }}>📧</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC' }}>Email</div>
-                <div style={{ fontSize: 11, color: '#475569' }}>Rapport d'alerte par email · Par défaut : HIGH et CRITICAL</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Email</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Rapport d'alerte par email · Par défaut : HIGH et CRITICAL</div>
               </div>
             </div>
             <button onClick={() => set('notif_email_enabled', !cfg.notif_email_enabled)} style={{
               width: 44, height: 24, borderRadius: 12, border: 'none',
-              background: cfg.notif_email_enabled ? '#3B82F6' : '#1E2D4F',
+              background: cfg.notif_email_enabled ? '#3B82F6' : 'var(--border-color)',
               cursor: 'pointer', position: 'relative',
             }}>
               <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: cfg.notif_email_enabled ? 23 : 3, transition: 'left 0.2s' }} />
@@ -720,16 +720,16 @@ export default function Settings() {
                 onChange={v => set('notif_email_address', v)}
               />
               <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>
+                <label style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>
                   Sévérité minimale (email)
                 </label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {['CRITICAL', 'HIGH', 'MEDIUM'].map(s => (
                     <button key={s} onClick={() => set('notif_email_min_severity', s)} style={{
                       padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-                      border: `1px solid ${cfg.notif_email_min_severity === s ? '#F97316' : '#1E2D4F'}`,
+                      border: `1px solid ${cfg.notif_email_min_severity === s ? '#F97316' : 'var(--border-color)'}`,
                       background: cfg.notif_email_min_severity === s ? 'rgba(249,115,22,0.15)' : 'transparent',
-                      color: cfg.notif_email_min_severity === s ? '#F97316' : '#64748B', cursor: 'pointer',
+                      color: cfg.notif_email_min_severity === s ? '#F97316' : 'var(--text-tertiary)', cursor: 'pointer',
                     }}>{s}</button>
                   ))}
                 </div>
@@ -747,22 +747,22 @@ export default function Settings() {
         <Section icon={Shield} title={`Inventaire des actifs${assets.length > 0 ? ` (${assets.length})` : ''}`} color="#3B82F6">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>Découverte automatique des équipements</div>
-              <div style={{ fontSize: 11, color: '#64748B' }}>Rechercher les IP et hôtes connus dans les flux et les logs.</div>
+              <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>Découverte automatique des équipements</div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Rechercher les IP et hôtes connus dans les flux et les logs.</div>
             </div>
-            <button onClick={discoverAssets} disabled={discovering} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #1E2D4F', background: discovering ? '#1E3A6E' : 'transparent', color: '#94A3B8', cursor: discovering ? 'not-allowed' : 'pointer', fontSize: 13 }}>
+            <button onClick={discoverAssets} disabled={discovering} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: discovering ? '#1E3A6E' : 'transparent', color: 'var(--text-secondary)', cursor: discovering ? 'not-allowed' : 'pointer', fontSize: 13 }}>
               {discovering ? 'Découverte...' : 'Découvrir les actifs'}
             </button>
           </div>
           <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>Plage ARP / CIDR</label>
+            <label style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>Plage ARP / CIDR</label>
             <input
               value={arpTarget}
               onChange={e => setArpTarget(e.target.value)}
               placeholder="Ex: 192.168.1.0/24"
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 13 }}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: 13 }}
             />
-            <div style={{ fontSize: 11, color: '#64748B' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
               Si vous avez un CIDR local valide, ajoutez-le pour utiliser le scan ARP. Sinon, Mylo tente la découverte passive sur les flux et logs existants.
             </div>
           </div>
@@ -773,8 +773,8 @@ export default function Settings() {
               onClick={() => setAssetsExpanded(p => !p)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
-                padding: '8px 12px', borderRadius: 8, background: '#1E2D4F', border: 'none',
-                color: '#94A3B8', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                padding: '8px 12px', borderRadius: 8, background: 'var(--border-color)', border: 'none',
+                color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
               }}
             >
               <span style={{ transform: assetsExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▶</span>
@@ -785,12 +785,12 @@ export default function Settings() {
           {(assetsExpanded || assets.length < 5) && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
             {assets.length === 0 && (
-              <div style={{ padding: 16, borderRadius: 12, background: '#0A0E1A', color: '#94A3B8' }}>
+              <div style={{ padding: 16, borderRadius: 12, background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                 Aucune ressource détectée. Appuyez sur « Découvrir les actifs » pour scanner les IP connues.
               </div>
             )}
             {assets.map(asset => (
-              <div key={asset.id} style={{ padding: 16, borderRadius: 12, border: `1px solid ${asset.is_authorized ? '#1E2D4F' : '#EF444440'}`, background: '#0A0E1A' }}>
+              <div key={asset.id} style={{ padding: 16, borderRadius: 12, border: `1px solid ${asset.is_authorized ? 'var(--border-color)' : '#EF444440'}`, background: 'var(--bg-primary)' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -806,7 +806,7 @@ export default function Settings() {
                           autoFocus
                           style={{
                             flex: 1, padding: '4px 8px', borderRadius: 6, fontSize: 13, fontWeight: 700,
-                            background: '#0A0E1A', border: '1px solid #3B82F6', color: '#F8FAFC',
+                            background: 'var(--bg-primary)', border: '1px solid #3B82F6', color: 'var(--text-primary)',
                           }}
                         />
                         <button onClick={() => saveAssetName(asset.id)} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer' }}><Check size={14} /></button>
@@ -818,11 +818,11 @@ export default function Settings() {
                         style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                         title="Cliquer pour modifier le nom"
                       >
-                        <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{asset.name || asset.label || asset.ip_address}</div>
-                        <Edit2 size={12} color="#64748B" />
+                        <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{asset.name || asset.label || asset.ip_address}</div>
+                        <Edit2 size={12} color="var(--text-tertiary)" />
                       </div>
                     )}
-                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                       {asset.ip_address} · {asset.mac_address || 'MAC inconnue'} · {asset.os_type || 'OS inconnu'}
                     </div>
                   </div>
@@ -851,10 +851,10 @@ export default function Settings() {
                 {/* Ports détectés */}
                 {asset.open_ports?.length > 0 && (
                   <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, color: '#475569', marginBottom: 4 }}>PORTS OUVERTS</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>PORTS OUVERTS</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {asset.open_ports.map(port => (
-                        <span key={port} style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, background: '#1E2D4F', color: '#94A3B8', fontFamily: 'monospace' }}>
+                        <span key={port} style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, background: 'var(--border-color)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                           :{port} {asset.services?.[port] ? `(${asset.services[port]})` : ''}
                         </span>
                       ))}
@@ -879,7 +879,7 @@ export default function Settings() {
                   <select
                     value={asset.criticality}
                     onChange={e => updateAsset(asset.id, { criticality: parseInt(e.target.value) })}
-                    style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC' }}
+                    style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                   >
                     <option value={1}>1 — Basse</option>
                     <option value={2}>2 — Moyenne</option>
@@ -915,7 +915,7 @@ export default function Settings() {
           zIndex: 3000, padding: '12px 24px', borderRadius: 10,
           background: toast.type === 'error' ? '#EF4444' : '#22C55E',
           color: '#fff', fontSize: 13, fontWeight: 600,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          boxShadow: 'var(--shadow-md)',
           animation: 'fadeIn 0.2s ease',
         }}>
           {toast.type === 'error' ? '✗' : '✓'} {toast.msg}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Shield, Eye, EyeOff, Building2, User, Mail, Lock, Phone, Globe } from 'lucide-react'
+import ThemeToggle from '../components/ThemeToggle'
 
 const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 
@@ -16,12 +17,12 @@ const SECTORS = [
 ]
 
 const S = {
-  page:  { minHeight: '100vh', background: '#070B14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
-  card:  { width: '100%', maxWidth: 520, background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 16, padding: 'clamp(20px, 6vw, 40px)', boxSizing: 'border-box' },
-  input: { width: '100%', padding: '11px 14px 11px 40px', borderRadius: 8, background: '#0A0E1A', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 14, outline: 'none', boxSizing: 'border-box' },
-  label: { fontSize: 12, color: '#94A3B8', fontWeight: 600, marginBottom: 6, display: 'block', letterSpacing: '0.05em' },
+  page:  { minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, position: 'relative' },
+  card:  { width: '100%', maxWidth: 520, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 'clamp(20px, 6vw, 40px)', boxSizing: 'border-box' },
+  input: { width: '100%', padding: '11px 14px 11px 40px', borderRadius: 8, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box' },
+  label: { fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 6, display: 'block', letterSpacing: '0.05em' },
   field: { marginBottom: 16, position: 'relative' },
-  icon:  { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569', pointerEvents: 'none' },
+  icon:  { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' },
 }
 
 function Field({ label, icon: Icon, children }) {
@@ -109,6 +110,7 @@ const userEmail = form.email.trim()
 
   return (
     <div style={S.page}>
+      <ThemeToggle style={{ position: 'absolute', top: 20, right: 20 }} />
       <div style={S.card}>
 
         {/* Header */}
@@ -124,7 +126,7 @@ const userEmail = form.email.trim()
           <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 800 }}>
             Créer votre espace Mylo IPS
           </h1>
-          <p style={{ margin: 0, color: '#64748B', fontSize: 14 }}>
+          <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: 14 }}>
             Configurez votre système de prévention d'intrusions
           </p>
         </div>
@@ -168,14 +170,14 @@ const userEmail = form.email.trim()
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer' }}
           onClick={() => setShowPwd(p => !p)}>
-          {showPwd ? <EyeOff size={14} color="#475569" /> : <Eye size={14} color="#475569" />}
-          <span style={{ fontSize: 12, color: '#475569' }}>
+          {showPwd ? <EyeOff size={14} color="var(--text-muted)" /> : <Eye size={14} color="var(--text-muted)" />}
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             {showPwd ? 'Masquer' : 'Afficher'} le mot de passe
           </span>
         </div>
 
         {/* Divider */}
-        <div style={{ borderTop: '1px solid #1E2D4F', margin: '4px 0 20px' }} />
+        <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0 20px' }} />
 
         {/* Section Organisation */}
         <div style={{ fontSize: 11, color: '#22C55E', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 14 }}>
@@ -209,7 +211,7 @@ const userEmail = form.email.trim()
         {/* Bouton */}
         <button onClick={submit} disabled={loading} style={{
           width: '100%', padding: '13px', borderRadius: 8, border: 'none',
-          background: loading ? '#1E3A6E' : 'linear-gradient(135deg, #3B82F6, #1E40AF)',
+          background: loading ? 'var(--border-color)' : 'linear-gradient(135deg, #3B82F6, #1E40AF)',
           color: '#fff', fontWeight: 700, fontSize: 15,
           cursor: loading ? 'not-allowed' : 'pointer',
           marginBottom: 16,
@@ -218,7 +220,7 @@ const userEmail = form.email.trim()
         </button>
 
         {/* Lien login */}
-        <div style={{ textAlign: 'center', fontSize: 13, color: '#475569' }}>
+        <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
           Vous avez déjà un compte ?{' '}
           <Link to="/" style={{ color: '#3B82F6', textDecoration: 'none', fontWeight: 600 }}>
             Se connecter

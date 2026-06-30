@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Activity, Bell, BarChart2, LogOut, Shield, Settings, LayoutDashboard, ClipboardList, Brain, Link2, X, ChevronLeft, ChevronRight, Bot } from 'lucide-react'
+import ThemeToggle from './ThemeToggle'
 
 const DJANGO_URL = import.meta.env.VITE_DJANGO_URL || 'https://mylo-ids.site'
 const MYLO_LOGO_URL = '/mylo_logo.png' // Put the new Mylo logo image here in frontend/public/mylo_logo.png
@@ -69,21 +70,21 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
   return (
     <aside style={{
       width: isMobile ? SIDEBAR_WIDTH : (rail ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH),
-      minHeight: '100vh', background: '#0F1629',
-      borderRight: '1px solid #1E2D4F', display: 'flex',
+      minHeight: '100vh', background: 'var(--bg-card)',
+      borderRight: '1px solid var(--border-color)', display: 'flex',
       flexDirection: 'column', padding: '24px 0', flexShrink: 0,
-      boxShadow: '4px 0 24px rgba(0,0,0,0.25)',
+      boxShadow: 'var(--shadow-sm)',
       transition: 'width 0.22s ease',
       ...(isMobile ? {
         position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 999,
         transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
         transition: 'transform 0.22s ease',
-        boxShadow: mobileOpen ? '4px 0 24px rgba(0,0,0,0.5)' : 'none',
+        boxShadow: mobileOpen ? 'var(--shadow-md)' : 'none',
       } : {}),
     }}>
       {/* Logo + toggle — toujours sur la même ligne, repliée ou non */}
       <div style={{
-        padding: rail ? '0 6px 16px' : '0 24px 24px', borderBottom: '1px solid #1E2D4F',
+        padding: rail ? '0 6px 16px' : '0 24px 24px', borderBottom: '1px solid var(--border-color)',
         display: 'flex', alignItems: 'center',
         justifyContent: rail ? 'center' : 'space-between',
         gap: rail ? 6 : 0,
@@ -91,7 +92,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <div style={{
             width: rail ? 28 : 38, height: rail ? 28 : 38, borderRadius: rail ? 8 : 10, flexShrink: 0,
-            background: '#0F1629',
+            background: 'var(--bg-card)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
             transition: 'width 0.22s ease, height 0.22s ease',
@@ -114,7 +115,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
           </div>
           {!rail && (
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: '#F8FAFC', fontWeight: 800, fontSize: 16 }}>Mylo IPS</div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 16 }}>Mylo IPS</div>
               <div style={{ color: '#3B82F6', fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 for {orgName}
               </div>
@@ -122,33 +123,41 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
           )}
         </div>
 
-        {isMobile ? (
-          <button
-            onClick={onCloseMobile}
-            aria-label="Fermer le menu"
-            style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 6, flexShrink: 0, transition: 'color 0.18s' }}
-          >
-            <X size={20} />
-          </button>
-        ) : (
-          <button
-            onClick={onToggleCollapse}
-            aria-label={rail ? 'Agrandir le menu' : 'Réduire le menu'}
-            title={rail ? 'Agrandir le menu' : 'Réduire le menu'}
-            style={{
-              width: rail ? 22 : 28, height: rail ? 22 : 28, borderRadius: 7, flexShrink: 0,
-              border: '1px solid #1E2D4F', background: '#131C33',
-              color: '#94A3B8', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.18s, color 0.18s, border-color 0.18s, width 0.22s ease, height 0.22s ease',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = '#3B82F6'; e.currentTarget.style.borderColor = '#3B82F6' }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.borderColor = '#1E2D4F' }}
-          >
-            {rail ? <ChevronRight size={13} /> : <ChevronLeft size={15} />}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: rail ? 6 : 8, flexShrink: 0, ...(rail ? { marginTop: 8 } : {}) }}>
+          {!rail && <ThemeToggle style={{ width: 28, height: 28, borderRadius: 7 }} />}
+          {isMobile ? (
+            <button
+              onClick={onCloseMobile}
+              aria-label="Fermer le menu"
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 6, flexShrink: 0, transition: 'color 0.18s' }}
+            >
+              <X size={20} />
+            </button>
+          ) : (
+            <button
+              onClick={onToggleCollapse}
+              aria-label={rail ? 'Agrandir le menu' : 'Réduire le menu'}
+              title={rail ? 'Agrandir le menu' : 'Réduire le menu'}
+              style={{
+                width: rail ? 22 : 28, height: rail ? 22 : 28, borderRadius: 7, flexShrink: 0,
+                border: '1px solid var(--border-color)', background: 'var(--bg-elevated)',
+                color: 'var(--text-secondary)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.18s, color 0.18s, border-color 0.18s, width 0.22s ease, height 0.22s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#3B82F6'; e.currentTarget.style.borderColor = '#3B82F6' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-color)' }}
+            >
+              {rail ? <ChevronRight size={13} /> : <ChevronLeft size={15} />}
+            </button>
+          )}
+        </div>
       </div>
+      {rail && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
+          <ThemeToggle style={{ width: 28, height: 28, borderRadius: 7 }} />
+        </div>
+      )}
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: '16px 12px' }}>
@@ -162,7 +171,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
               padding: rail ? '10px 0' : '10px 12px', borderRadius: 8, marginBottom: 4,
               textDecoration: 'none', fontSize: 14, fontWeight: 500,
               background: isActive ? 'rgba(59,130,246,0.15)' : 'transparent',
-              color: isActive ? '#3B82F6' : '#94A3B8',
+              color: isActive ? '#3B82F6' : 'var(--text-secondary)',
               borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
               transition: 'all 0.2s ease',
             })}>
@@ -186,13 +195,13 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
       </div>
 
       {/* User + Logout */}
-      <div style={{ padding: '0 12px', borderTop: '1px solid #1E2D4F', paddingTop: 12 }}>
+      <div style={{ padding: '0 12px', borderTop: '1px solid var(--border-color)', paddingTop: 12 }}>
         {!rail && (
           <div style={{ padding: '8px 12px', marginBottom: 4 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#F8FAFC', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {currentUser?.fullname || currentUser?.username || '—'}
             </div>
-            <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
               {currentUser?.role_display || 'Utilisateur'}
             </div>
           </div>
@@ -202,7 +211,7 @@ export default function Sidebar({ onCopilot, isMobile = false, mobileOpen = fals
           justifyContent: rail ? 'center' : 'flex-start',
           padding: '10px 12px', borderRadius: 8,
           background: 'none', border: 'none',
-          color: '#94A3B8', fontSize: 14, cursor: 'pointer',
+          color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer',
           transition: 'color 0.18s',
         }}>
           <LogOut size={18} /> {!rail && 'Déconnexion'}

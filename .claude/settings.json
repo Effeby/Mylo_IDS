@@ -27,7 +27,12 @@
       "Bash(python -m py_compile alerts/models.py)",
       "Bash(python manage.py makemigrations alerts)",
       "Bash(python -m py_compile alerts/tasks.py alerts/wazuh_client.py alerts/models.py)",
-      "Bash(python manage.py makemigrations --check --dry-run)"
+      "Bash(python manage.py makemigrations --check --dry-run)",
+      "Bash(DJANGO_SETTINGS_MODULE=core.settings python -c ' *)",
+      "Bash(python -m py_compile backend/alerts/tasks.py)",
+      "Bash(python -m py_compile alerts/views.py)",
+      "Bash(npx --no-install esbuild src/pages/Settings.jsx --loader=jsx --bundle=false --outfile=/dev/null)",
+      "Bash(pkill -f \"vite\")"
     ]
   }
 }

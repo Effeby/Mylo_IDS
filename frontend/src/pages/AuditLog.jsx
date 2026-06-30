@@ -61,10 +61,10 @@ export default function AuditLog() {
   useEffect(() => { if (canView) load() }, [filter.limit, filter.action])
 
   if (!canView) return (
-    <div style={{ padding: 32, color: '#F8FAFC', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16 }}>
+    <div style={{ padding: 32, color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16 }}>
       <Shield size={48} color="#EF4444" />
       <h2 style={{ margin: 0 }}>Accès refusé</h2>
-      <p style={{ color: '#64748B', margin: 0 }}>Réservé aux Managers SOC et Administrateurs.</p>
+      <p style={{ color: 'var(--text-tertiary)', margin: 0 }}>Réservé aux Managers SOC et Administrateurs.</p>
     </div>
   )
 
@@ -76,7 +76,7 @@ export default function AuditLog() {
   }
 
   return (
-    <div className="mylo-page" style={{ color: '#F8FAFC' }}>
+    <div className="mylo-page" style={{ color: 'var(--text-primary)' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
@@ -86,10 +86,10 @@ export default function AuditLog() {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Journal d'Audit</h1>
-            <p style={{ margin: 0, color: '#94A3B8', fontSize: 13 }}>Traçabilité des actions — qui, quoi, quand, d'où</p>
+            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>Traçabilité des actions — qui, quoi, quand, d'où</p>
           </div>
         </div>
-        <button onClick={load} disabled={loading} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #1E2D4F', background: 'transparent', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+        <button onClick={load} disabled={loading} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
           <RefreshCw size={14} /> Actualiser
         </button>
       </div>
@@ -102,9 +102,9 @@ export default function AuditLog() {
           { label: 'IP bloquées',   value: stats.blocks,  color: '#EF4444' },
           { label: 'Échecs',        value: stats.failed,  color: '#F97316' },
         ].map(({ label, value, color }) => (
-          <div key={label} style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 10, padding: '14px 18px' }}>
+          <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, padding: '14px 18px' }}>
             <div style={{ fontSize: 24, fontWeight: 800, color }}>{value}</div>
-            <div style={{ fontSize: 12, color: '#64748B' }}>{label}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{label}</div>
           </div>
         ))}
       </div>
@@ -112,7 +112,7 @@ export default function AuditLog() {
       {/* Filtres */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <select value={filter.action} onChange={e => setFilter(p => ({...p, action: e.target.value}))}
-          style={{ padding: '8px 12px', borderRadius: 8, background: '#0F1629', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 13 }}>
+          style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: 13 }}>
           <option value="">Toutes les actions</option>
           <option value="login">Connexions</option>
           <option value="login_failed">Échecs connexion</option>
@@ -124,7 +124,7 @@ export default function AuditLog() {
           <option value="alert_feedback">Feedbacks River</option>
         </select>
         <select value={filter.limit} onChange={e => setFilter(p => ({...p, limit: parseInt(e.target.value)}))}
-          style={{ padding: '8px 12px', borderRadius: 8, background: '#0F1629', border: '1px solid #1E2D4F', color: '#F8FAFC', fontSize: 13 }}>
+          style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: 13 }}>
           {[50,100,200,500].map(n => <option key={n} value={n}>{n} entrées</option>)}
         </select>
       </div>
@@ -132,33 +132,33 @@ export default function AuditLog() {
       {error && <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#EF4444', fontSize: 13, marginBottom: 12 }}>⚠️ {error}</div>}
 
       {/* Table */}
-      <div className="mylo-table-scroll" style={{ background: '#0F1629', border: '1px solid #1E2D4F', borderRadius: 12 }}>
+      <div className="mylo-table-scroll" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12 }}>
         <div style={{ minWidth: 1000 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '150px 130px 1fr 280px 130px 110px 40px', padding: '12px 20px', borderBottom: '1px solid #1E2D4F', fontSize: 11, color: '#475569', fontWeight: 700, letterSpacing: '0.05em' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '150px 130px 1fr 280px 130px 110px 40px', padding: '12px 20px', borderBottom: '1px solid var(--border-color)', fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>
           <span>HORODATAGE</span><span>UTILISATEUR</span><span>ACTION</span><span>DESCRIPTION</span><span>IP SOURCE</span><span>STATUT</span><span></span>
         </div>
 
         {loading ? (
-          <div style={{ padding: 32, textAlign: 'center', color: '#475569' }}>Chargement...</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement...</div>
         ) : logs.length === 0 ? (
-          <div style={{ padding: 32, textAlign: 'center', color: '#475569' }}>Aucun log trouvé</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>Aucun log trouvé</div>
         ) : logs.map((log, i) => {
-          const color  = ACTION_COLORS[log.action] || '#94A3B8'
+          const color  = ACTION_COLORS[log.action] || 'var(--text-secondary)'
           const icon   = ACTION_ICONS[log.action]  || '📋'
           const isOpen = expanded === log.id
           return (
             <div key={log.id}>
               <div onClick={() => setExpanded(isOpen ? null : log.id)}
-                style={{ display: 'grid', gridTemplateColumns: '150px 130px 1fr 280px 130px 110px 40px', padding: '13px 20px', borderBottom: '1px solid #0A0E1A', cursor: 'pointer', background: isOpen ? 'rgba(59,130,246,0.04)' : i%2===0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                <div style={{ fontSize: 12, color: '#64748B' }}>
+                style={{ display: 'grid', gridTemplateColumns: '150px 130px 1fr 280px 130px 110px 40px', padding: '13px 20px', borderBottom: '1px solid var(--bg-primary)', cursor: 'pointer', background: isOpen ? 'rgba(59,130,246,0.04)' : i%2===0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
                   <div>{new Date(log.timestamp).toLocaleDateString('fr-FR')}</div>
                   <div style={{ fontFamily: 'monospace' }}>{new Date(log.timestamp).toLocaleTimeString('fr-FR')}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1E2D4F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#94A3B8' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>
                     {(log.user || '?')[0].toUpperCase()}
                   </div>
-                  <span style={{ fontSize: 12, color: '#F8FAFC', fontWeight: 500 }}>{log.user || '—'}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{log.user || '—'}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 14 }}>{icon}</span>
@@ -166,24 +166,24 @@ export default function AuditLog() {
                     <div style={{ fontSize: 12, fontWeight: 600, color }}>{log.action_display}</div>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: '#94A3B8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.description || ''}>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.description || ''}>
                   {log.description || '—'}
                 </div>
-                <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#94A3B8' }}>{log.ip_address || '—'}</div>
+                <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{log.ip_address || '—'}</div>
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: log.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: log.success ? '#22C55E' : '#EF4444', height: 'fit-content' }}>
                   {log.success ? '✓ Succès' : '✗ Échec'}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ChevronDown size={14} color="#475569" style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  <ChevronDown size={14} color="var(--text-muted)" style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                 </div>
               </div>
               {isOpen && (
-                <div style={{ padding: '16px 20px', background: '#0A0E1A', borderBottom: '1px solid #1E2D4F' }}>
+                <div style={{ padding: '16px 20px', background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)' }}>
                   <div className="mylo-grid-cards" style={{ gap: 16 }}>
                     {[['Organisation',log.organisation||'—'],['Méthode HTTP',log.method||'—'],['Endpoint',log.endpoint||'—'],['Code HTTP',log.status_code||'—'],['Type objet',log.object_type||'—'],['Objet',log.object_repr||'—'],['Description',log.description||'—']].map(([label,value]) => (
                       <div key={label}>
-                        <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, marginBottom: 3, textTransform: 'uppercase' }}>{label}</div>
-                        <div style={{ fontSize: 12, color: '#94A3B8', wordBreak: 'break-all' }}>{value}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 3, textTransform: 'uppercase' }}>{label}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{value}</div>
                       </div>
                     ))}
                   </div>

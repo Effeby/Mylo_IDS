@@ -222,7 +222,7 @@ function Layout({ children }) {
   const desktopWrapperWidth = isMobile ? 0 : (collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH)
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#0A0E1A' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
       <div style={{
         flexShrink: 0, height: '100vh', overflow: 'hidden',
         width: desktopWrapperWidth,
@@ -253,11 +253,11 @@ function Layout({ children }) {
             style={{
               position: 'absolute', top: 14, left: 14, zIndex: 50,
               width: 36, height: 36, borderRadius: 10,
-              border: '1px solid #1E2D4F', background: 'rgba(15,22,41,0.85)',
+              border: '1px solid var(--border-color)', background: 'var(--bg-glass)',
               backdropFilter: 'blur(6px)',
-              color: '#94A3B8', cursor: 'pointer',
+              color: 'var(--text-secondary)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+              boxShadow: 'var(--shadow-xs)',
               transition: 'background 0.18s, color 0.18s',
             }}
           >
@@ -271,7 +271,7 @@ function Layout({ children }) {
           style={{
             flex: 1, overflowY: 'auto', position: 'relative', minWidth: 0,
             background: 'radial-gradient(circle at 0% 0%, rgba(59,130,246,0.07), transparent 45%), ' +
-                        'radial-gradient(circle at 100% 100%, rgba(59,130,246,0.04), transparent 50%), #0A0E1A',
+                        'radial-gradient(circle at 100% 100%, rgba(59,130,246,0.04), transparent 50%), var(--bg-primary)',
           }}
         >
           {children}
@@ -281,10 +281,10 @@ function Layout({ children }) {
               style={{
                 position: 'fixed', bottom: 28, right: 28, zIndex: 999,
                 padding: '8px 18px', borderRadius: 24,
-                border: '1px solid #1E2D4F', background: '#0F1629',
-                color: '#94A3B8', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                border: '1px solid var(--border-color)', background: 'var(--bg-card)',
+                color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 6,
-                boxShadow: '0 6px 24px rgba(0,0,0,0.45)',
+                boxShadow: 'var(--shadow-md)',
                 transition: 'transform 0.18s, box-shadow 0.18s',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)' }}
