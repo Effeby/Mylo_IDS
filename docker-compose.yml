@@ -134,6 +134,7 @@ services:
       - OPNSENSE_URL=${OPNSENSE_URL:-https://172.16.1.1}
       - OPNSENSE_API_KEY=${OPNSENSE_API_KEY:-}
       - OPNSENSE_API_SECRET=${OPNSENSE_API_SECRET:-}
+      - OPNSENSE_ALIAS_NAME=${OPNSENSE_ALIAS_NAME:-mylo_blocklist}
     volumes:
       - ./.env.capture:/app/.env.capture:ro
       - ./ml/models:/app/ml/models:ro
