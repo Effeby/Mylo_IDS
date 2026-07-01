@@ -15,7 +15,7 @@ import threading
 import os
 import sys
 import platform
-from collections import defaultdict
+from collections import defaultdict, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw, DNS, DNSQR
 from pathlib import Path
@@ -37,6 +37,17 @@ _ifaces_raw    = os.environ.get("CAPTURE_IFACE", "enp0s3")
 CAPTURE_IFACES = [i.strip() for i in _ifaces_raw.split(",") if i.strip().lower() != "wg0"]
 WINDOW_SEC     = 2
 RIVER_AUTO_LEARN_THRESHOLD = 0.70
+
+# ─── Score de suspicion glissant par IP source ────────────────────────
+# Complète la fenêtre courte de capture (WINDOW_SEC=2s), trop brève pour
+# révéler des patterns répétitifs lents (BruteForce, Probe discret) qui
+# se diluent d'une fenêtre à l'autre. Ce compteur persiste au-delà de
+# chaque cycle de send_flows() et cumule l'activité par IP source sur
+# une fenêtre glissante plus large (SLIDING_WINDOW_SEC).
+SLIDING_WINDOW_SEC   = int(os.environ.get("SLIDING_WINDOW_SEC", "60"))
+SLIDING_THRESHOLD    = int(os.environ.get("SLIDING_THRESHOLD", "15"))
+ip_activity          = defaultdict(deque)   # src_ip -> deque[(timestamp, count)]
+ip_activity_lock     = threading.Lock()
 
 # IPs de l'infrastructure Mylo — jamais alertées entre elles
 INFRASTRUCTURE_IPS = {
@@ -70,7 +81,7 @@ CAPTURE_AGENT_SECRET = os.environ.get("CAPTURE_AGENT_SECRET", "")
 OPNSENSE_URL         = os.environ.get("OPNSENSE_URL", "https://172.16.1.1").rstrip('/')
 OPNSENSE_API_KEY     = os.environ.get("OPNSENSE_API_KEY", "")
 OPNSENSE_API_SECRET  = os.environ.get("OPNSENSE_API_SECRET", "")
-OPNSENSE_ALIAS_NAME  = "mylo_blocklist"
+OPNSENSE_ALIAS_NAME  = "mylo_blocked_ips"
 
 PROTO_MAP = {'TCP': 2, 'UDP': 1, 'ICMP': 0, 'OTHER': 2}
 FLAG_MAP  = {'S': 2, 'SA': 4, 'A': 10, 'FA': 6, 'R': 8, 'PA': 24}
@@ -109,6 +120,7 @@ stats = {
     'captured': 0, 'sent': 0, 'attacks': 0,
     'river_learned': 0, 'river_skipped': 0,
     'dpi_http': 0, 'dpi_ssh': 0, 'dpi_dns': 0,
+    'sliding_flagged': 0,
 }
 
 
@@ -123,6 +135,36 @@ def detect_app_protocol(src_port: int, dst_port: int) -> str:
     if ports & SMTP_PORTS:   return 'SMTP'
     if ports & DB_PORTS:     return 'DATABASE'
     return 'OTHER'
+
+
+# ─── Score de suspicion glissant par IP source ────────────────────────
+def record_ip_activity(src_ip: str, amount: int):
+    """
+    Enregistre l'activité (nb de paquets/tentatives) d'une IP source pour
+    le score de suspicion glissant, qui persiste au-delà d'une seule
+    fenêtre de capture de WINDOW_SEC secondes.
+    """
+    now = time.time()
+    with ip_activity_lock:
+        dq = ip_activity[src_ip]
+        dq.append((now, amount))
+        cutoff = now - SLIDING_WINDOW_SEC
+        while dq and dq[0][0] < cutoff:
+            dq.popleft()
+
+
+def get_ip_suspicion_score(src_ip: str) -> int:
+    """
+    Retourne l'activité cumulée d'une IP source sur la fenêtre glissante
+    SLIDING_WINDOW_SEC (purge les entrées expirées au passage).
+    """
+    now = time.time()
+    cutoff = now - SLIDING_WINDOW_SEC
+    with ip_activity_lock:
+        dq = ip_activity[src_ip]
+        while dq and dq[0][0] < cutoff:
+            dq.popleft()
+        return sum(amount for _, amount in dq)
 
 
 def resolve_windows_interfaces():
@@ -207,7 +249,7 @@ def get_token():
     password = env.get('CAPTURE_PASSWORD')
     if not username or not password:
         print(f"  ⚠  Credentials manquants dans {ENV_FILE}")
-        print(f"  💡 Connecte-toi à Mylo — les credentials seront sauvegardés automatiquement.")
+        print(f"  💡 Connecte-toi à Mylo — les credentials seront sauvegardées automatiquement.")
         return
     try:
         r = requests.post(f'{DJANGO_URL}/api/auth/login/', json={
@@ -755,6 +797,13 @@ def send_flows():
             if flow['src_port'] == 51820 or flow['dst_port'] == 51820:
                 continue
 
+            # ── Score de suspicion glissant ─────────────────────────────
+            # Enregistre l'activité de cette IP source pour ce cycle, PUIS
+            # lit le cumul sur la fenêtre glissante complète (persiste
+            # au-delà de ce seul cycle de WINDOW_SEC secondes).
+            record_ip_activity(flow['src_ip'], flow['count'])
+            bruteforce_score = get_ip_suspicion_score(flow['src_ip'])
+
             features = flow_to_features(flow)
 
             # Payload envoyé à Django (sans les champs DPI internes)
@@ -776,12 +825,12 @@ def send_flows():
 
             threading.Thread(
                 target=analyze_flow_async,
-                args=(payload, features, flow, phase_actuelle, river_learn_threshold),
+                args=(payload, features, flow, phase_actuelle, river_learn_threshold, bruteforce_score),
                 daemon=True
             ).start()
 
 
-def analyze_flow_async(payload, features, flow, phase_actuelle, river_learn_threshold):
+def analyze_flow_async(payload, features, flow, phase_actuelle, river_learn_threshold, bruteforce_score=0):
     try:
         r = requests.post(
             f'{DJANGO_URL}/api/alerts/analyze/',
@@ -817,6 +866,20 @@ def analyze_flow_async(payload, features, flow, phase_actuelle, river_learn_thre
             print(f"  🔍 DPI [{app_proto:8s}] suspicion={dpi_susp:.2f} "
                   f"{flow['src_ip']}:{src_port} → {flow['dst_ip']}:{dst_port} "
                   f"[{dpi_reasons}]")
+
+        # ── Sliding-window override : BruteForce probable sur pattern lent ──
+        # XGBoost/Scapy raisonnent sur une fenêtre courte (WINDOW_SEC=2s), donc
+        # une attaque lente et répétée (ex: BruteForce ~1 tentative/s) se dilue
+        # d'une fenêtre à l'autre et reste sous le radar. Ce compteur persistant
+        # par IP source, cumulé sur SLIDING_WINDOW_SEC, rattrape ce cas.
+        if not is_attack and bruteforce_score >= SLIDING_THRESHOLD:
+            is_attack    = True
+            attack_type  = "BruteForce Probable"
+            alert_status = "À vérifier"
+            stats['sliding_flagged'] += 1
+            print(f"  ⏱️  SLIDING [{SLIDING_WINDOW_SEC}s] score={bruteforce_score} "
+                  f"{flow['src_ip']}:{src_port} → {flow['dst_ip']}:{dst_port} "
+                  f"— BruteForce probable")
 
         if is_attack:
             stats['attacks'] += 1
@@ -869,6 +932,7 @@ def print_stats():
               f"Attaques:{stats['attacks']} | "
               f"River appris:{stats['river_learned']} | "
               f"À vérifier:{stats['river_skipped']} | "
+              f"Sliding flagged:{stats['sliding_flagged']} | "
               f"DPI HTTP:{stats['dpi_http']} SSH:{stats['dpi_ssh']} DNS:{stats['dpi_dns']}\n")
 
 
@@ -890,9 +954,10 @@ if __name__ == '__main__':
 
     print(f"  Interfaces : {', '.join(active_ifaces)}")
     print(f"  Fenêtre    : {WINDOW_SEC}s")
+    print(f"  Sliding    : {SLIDING_WINDOW_SEC}s, seuil={SLIDING_THRESHOLD}")
     print(f"  River seuil: confiance ≥ {RIVER_AUTO_LEARN_THRESHOLD}")
     print(f"  DPI        : port scan, SYN flood, exfiltration, bursts, DNS")
-    print(f"\n  ✓ Normal | 🚨 Attaque | 🔍 DPI | 🎯 IF zero-day | 🧠 River\n")
+    print(f"\n  ✓ Normal | 🚨 Attaque | 🔍 DPI | ⏱️  Sliding | 🎯 IF zero-day | 🧠 River\n")
 
     if IS_WINDOWS:
         print("  ⚠  Windows : assure-toi que Npcap est installé (https://npcap.com/)")
