@@ -38,15 +38,22 @@ CAPTURE_IFACES = [i.strip() for i in _ifaces_raw.split(",") if i.strip().lower()
 WINDOW_SEC     = 2
 RIVER_AUTO_LEARN_THRESHOLD = 0.70
 
-# ─── Score de suspicion glissant par IP source ────────────────────────
+# ─── Score de suspicion glissant par (IP source, IP dest, port dest) ──
 # Complète la fenêtre courte de capture (WINDOW_SEC=2s), trop brève pour
 # révéler des patterns répétitifs lents (BruteForce, Probe discret) qui
 # se diluent d'une fenêtre à l'autre. Ce compteur persiste au-delà de
-# chaque cycle de send_flows() et cumule l'activité par IP source sur
-# une fenêtre glissante plus large (SLIDING_WINDOW_SEC).
+# chaque cycle de send_flows() et cumule le nombre de NOUVELLES CONNEXIONS
+# (SYN TCP) d'une source vers UNE cible précise (IP+port), sur une fenêtre
+# glissante plus large (SLIDING_WINDOW_SEC).
+#
+# Important : la clé inclut (dst_ip, dst_port), pas seulement src_ip.
+# Une IP source normalement active (ex: un serveur qui fait DNS + HTTPS +
+# heartbeat monitoring en parallèle) ne doit PAS être flaggée juste parce
+# que son volume total de paquets est élevé — seul le martèlement répété
+# d'UNE MÊME cible (même service) est un signal de BruteForce/Probe.
 SLIDING_WINDOW_SEC   = int(os.environ.get("SLIDING_WINDOW_SEC", "60"))
-SLIDING_THRESHOLD    = int(os.environ.get("SLIDING_THRESHOLD", "15"))
-ip_activity          = defaultdict(deque)   # src_ip -> deque[(timestamp, count)]
+SLIDING_THRESHOLD    = int(os.environ.get("SLIDING_THRESHOLD", "10"))
+ip_activity          = defaultdict(deque)   # (src_ip,dst_ip,dst_port) -> deque[(ts, syn_count)]
 ip_activity_lock     = threading.Lock()
 
 # IPs de l'infrastructure Mylo — jamais alertées entre elles
@@ -137,31 +144,35 @@ def detect_app_protocol(src_port: int, dst_port: int) -> str:
     return 'OTHER'
 
 
-# ─── Score de suspicion glissant par IP source ────────────────────────
-def record_ip_activity(src_ip: str, amount: int):
+# ─── Score de suspicion glissant par (IP source, IP dest, port dest) ──
+def record_ip_activity(target_key: tuple, amount: int):
     """
-    Enregistre l'activité (nb de paquets/tentatives) d'une IP source pour
-    le score de suspicion glissant, qui persiste au-delà d'une seule
-    fenêtre de capture de WINDOW_SEC secondes.
+    Enregistre le nombre de nouvelles connexions (SYN) d'une source vers
+    UNE cible précise (src_ip, dst_ip, dst_port), pour le score de
+    suspicion glissant qui persiste au-delà d'une seule fenêtre de
+    capture de WINDOW_SEC secondes.
     """
+    if amount <= 0:
+        return
     now = time.time()
     with ip_activity_lock:
-        dq = ip_activity[src_ip]
+        dq = ip_activity[target_key]
         dq.append((now, amount))
         cutoff = now - SLIDING_WINDOW_SEC
         while dq and dq[0][0] < cutoff:
             dq.popleft()
 
 
-def get_ip_suspicion_score(src_ip: str) -> int:
+def get_ip_suspicion_score(target_key: tuple) -> int:
     """
-    Retourne l'activité cumulée d'une IP source sur la fenêtre glissante
-    SLIDING_WINDOW_SEC (purge les entrées expirées au passage).
+    Retourne le nombre cumulé de nouvelles connexions d'une source vers
+    une cible précise sur la fenêtre glissante SLIDING_WINDOW_SEC (purge
+    les entrées expirées au passage).
     """
     now = time.time()
     cutoff = now - SLIDING_WINDOW_SEC
     with ip_activity_lock:
-        dq = ip_activity[src_ip]
+        dq = ip_activity[target_key]
         while dq and dq[0][0] < cutoff:
             dq.popleft()
         return sum(amount for _, amount in dq)
@@ -798,11 +809,16 @@ def send_flows():
                 continue
 
             # ── Score de suspicion glissant ─────────────────────────────
-            # Enregistre l'activité de cette IP source pour ce cycle, PUIS
-            # lit le cumul sur la fenêtre glissante complète (persiste
-            # au-delà de ce seul cycle de WINDOW_SEC secondes).
-            record_ip_activity(flow['src_ip'], flow['count'])
-            bruteforce_score = get_ip_suspicion_score(flow['src_ip'])
+            # Enregistre uniquement le nombre de NOUVELLES CONNEXIONS (SYN)
+            # de cette source vers CETTE cible précise (IP+port), pas le
+            # volume brut de paquets — sinon toute IP simplement active
+            # (DNS, navigation, heartbeat) serait flaggée à tort.
+            # N'a de sens que pour TCP (notion de "tentative de connexion").
+            bruteforce_score = 0
+            if flow['protocol'] == 'TCP' and flow['tcp_syn_count'] > 0:
+                target_key = (flow['src_ip'], flow['dst_ip'], flow['dst_port'])
+                record_ip_activity(target_key, flow['tcp_syn_count'])
+                bruteforce_score = get_ip_suspicion_score(target_key)
 
             features = flow_to_features(flow)
 
