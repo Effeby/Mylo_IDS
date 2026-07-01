@@ -108,8 +108,8 @@ services:
     env_file:
       - .env
     environment:
-      VITE_DJANGO_URL: http://173.212.241.228:8001
-      VITE_FASTAPI_URL: http://173.212.241.228:8000
+      VITE_DJANGO_URL: https://mylo-ids.site
+      VITE_FASTAPI_URL: https://mylo-ids.site/api/ml
     volumes:
       - ./frontend:/app
       - /app/node_modules
