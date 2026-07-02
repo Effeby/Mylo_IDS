@@ -53,8 +53,16 @@ RIVER_AUTO_LEARN_THRESHOLD = 0.70
 # d'UNE MÊME cible (même service) est un signal de BruteForce/Probe.
 SLIDING_WINDOW_SEC   = int(os.environ.get("SLIDING_WINDOW_SEC", "60"))
 SLIDING_THRESHOLD    = int(os.environ.get("SLIDING_THRESHOLD", "10"))
+SLIDING_COOLDOWN_SEC = int(os.environ.get("SLIDING_COOLDOWN_SEC", "60"))
 ip_activity          = defaultdict(deque)   # (src_ip,dst_ip,dst_port) -> deque[(ts, syn_count)]
 ip_activity_lock     = threading.Lock()
+
+# Anti-spam : une IP au-dessus du seuil reste au-dessus du seuil pendant
+# toute la durée de l'attaque (à chaque cycle de 2s). Sans cooldown, on
+# régénère une alerte "BruteForce Probable" — et donc une tentative de
+# blocage OPNsense — toutes les 2 secondes tant que l'attaque continue.
+sliding_alerted      = {}   # (src_ip,dst_ip,dst_port) -> timestamp de la dernière alerte
+sliding_alerted_lock = threading.Lock()
 
 # IPs de l'infrastructure Mylo — jamais alertées entre elles
 INFRASTRUCTURE_IPS = {
@@ -176,6 +184,31 @@ def get_ip_suspicion_score(target_key: tuple) -> int:
         while dq and dq[0][0] < cutoff:
             dq.popleft()
         return sum(amount for _, amount in dq)
+
+
+def sliding_cooldown_ok(target_key: tuple) -> bool:
+    """
+    Anti-spam : retourne True seulement si le cooldown est écoulé pour
+    cette cible, ce qui autorise une (nouvelle) alerte "BruteForce
+    Probable" — et donc une tentative de blocage OPNsense. Sans ce
+    garde-fou, le score glissant reste au-dessus du seuil pendant toute
+    la durée de l'attaque, régénérant une alerte à CHAQUE cycle de
+    WINDOW_SEC (2s), ce qui spamme le dashboard et retente le blocage
+    en boucle inutilement.
+    """
+    now = time.time()
+    with sliding_alerted_lock:
+        # purge opportuniste des entrées très anciennes (évite une
+        # croissance illimitée du dict sur une longue durée de service)
+        stale_cutoff = now - (SLIDING_COOLDOWN_SEC * 10)
+        for k in [k for k, ts in sliding_alerted.items() if ts < stale_cutoff]:
+            del sliding_alerted[k]
+
+        last = sliding_alerted.get(target_key, 0)
+        if now - last >= SLIDING_COOLDOWN_SEC:
+            sliding_alerted[target_key] = now
+            return True
+        return False
 
 
 def resolve_windows_interfaces():
@@ -815,6 +848,7 @@ def send_flows():
             # (DNS, navigation, heartbeat) serait flaggée à tort.
             # N'a de sens que pour TCP (notion de "tentative de connexion").
             bruteforce_score = 0
+            target_key = None
             if flow['protocol'] == 'TCP' and flow['tcp_syn_count'] > 0:
                 target_key = (flow['src_ip'], flow['dst_ip'], flow['dst_port'])
                 record_ip_activity(target_key, flow['tcp_syn_count'])
@@ -841,12 +875,12 @@ def send_flows():
 
             threading.Thread(
                 target=analyze_flow_async,
-                args=(payload, features, flow, phase_actuelle, river_learn_threshold, bruteforce_score),
+                args=(payload, features, flow, phase_actuelle, river_learn_threshold, bruteforce_score, target_key),
                 daemon=True
             ).start()
 
 
-def analyze_flow_async(payload, features, flow, phase_actuelle, river_learn_threshold, bruteforce_score=0):
+def analyze_flow_async(payload, features, flow, phase_actuelle, river_learn_threshold, bruteforce_score=0, target_key=None):
     try:
         r = requests.post(
             f'{DJANGO_URL}/api/alerts/analyze/',
@@ -887,8 +921,14 @@ def analyze_flow_async(payload, features, flow, phase_actuelle, river_learn_thre
         # XGBoost/Scapy raisonnent sur une fenêtre courte (WINDOW_SEC=2s), donc
         # une attaque lente et répétée (ex: BruteForce ~1 tentative/s) se dilue
         # d'une fenêtre à l'autre et reste sous le radar. Ce compteur persistant
-        # par IP source, cumulé sur SLIDING_WINDOW_SEC, rattrape ce cas.
-        if not is_attack and bruteforce_score >= SLIDING_THRESHOLD:
+        # par (src,dst,port), cumulé sur SLIDING_WINDOW_SEC, rattrape ce cas.
+        #
+        # Le cooldown (sliding_cooldown_ok) évite de régénérer l'alerte — et
+        # donc de retenter le blocage OPNsense — à chaque cycle de 2s tant
+        # que l'attaque continue : une seule alerte par cible et par fenêtre
+        # de SLIDING_COOLDOWN_SEC suffit.
+        if (not is_attack and bruteforce_score >= SLIDING_THRESHOLD
+                and target_key is not None and sliding_cooldown_ok(target_key)):
             is_attack    = True
             attack_type  = "BruteForce Probable"
             alert_status = "À vérifier"
